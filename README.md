@@ -4,6 +4,44 @@
 
 A Codex skill for scoped Claude sign-in cleanup, read-only Windows startup checks, and fail-closed networking workflows.
 
+## 两块核心流程
+
+减少本地状态残留和意外更换出口，让 Claude 的使用环境更可控、更稳定。清理按需执行；下图的网络保护流程需要实际部署并通过验收，安装 Skill 本身不会自动启用保护。
+
+```mermaid
+flowchart TB
+    subgraph CLEAN["① 清理 Claude 本地残留"]
+        A["按授权定向清理<br/>登录状态 · Cookie · 站点存储 · 缓存 · 相关记录"]
+        B["复查清理结果<br/>保留无关站点、MCP 和工作配置"]
+        A --> B
+    end
+
+    subgraph GUARD["② 固定出口 IP，异常时阻断联网"]
+        C["配置专用代理与允许的出口 IP<br/>不提供直连或其他出口回退"]
+        D{"实际出口在允许名单内<br/>且校验有效？"}
+        E["允许 Claude 受保护流量联网<br/>运行期间持续复查出口"]
+        F["检测到 IP 不符或校验失效<br/>拒绝新连接，并关闭已有转发"]
+        C --> D
+        D -->|是| E
+        D -->|否| F
+        E -->|持续复查| D
+        F -->|恢复后重新验证| D
+    end
+
+    B --> C
+
+    classDef cleanup fill:#eff6ff,stroke:#2563eb,color:#172554;
+    classDef config fill:#f8fafc,stroke:#64748b,color:#0f172a;
+    classDef allowed fill:#ecfdf5,stroke:#059669,color:#064e3b;
+    classDef blocked fill:#fff1f2,stroke:#e11d48,color:#881337;
+    class A,B cleanup;
+    class C,D config;
+    class E allowed;
+    class F blocked;
+```
+
+本地清理不重置硬件指纹；检测到出口异常后阻断的是 Claude/Anthropic 受保护流量。定期探测不代表逐包、零延迟检测。
+
 ## 解决什么问题
 
 - **应用更新后突然无法连接。** 比对实际安装包与保护登记，发现旧规则仍指向旧版本的情况。
