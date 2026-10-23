@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="960" viewBox="0 0 1000 960" role="img" aria-labelledby="title desc">
+  <title id="title">Claude 本地清理与固定出口流程</title>
+  <desc id="desc">第一块按授权清理登录状态、Cookie、站点存储、缓存及相关记录，并保留无关站点、MCP和工作配置。第二块在网络保护实际部署并验收后，校验专用出口：匹配允许IP且校验有效时放行；检测到IP不符或校验失效时拒绝新连接并关闭已有转发，恢复后重新验证。</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M1 1L9 5L1 9" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></marker>
+    <style>
+      text {font-family:"Microsoft YaHei","PingFang SC","Noto Sans CJK SC",sans-serif;fill:#0f172a}
+      .panel-title {font-size:23px;font-weight:700}
+      .node-title {font-size:21px;font-weight:700;text-anchor:middle}
+      .body {font-size:17px;fill:#475569;text-anchor:middle}
+      .label {font-size:16px;fill:#475569;text-anchor:middle}
+      .line {fill:none;stroke:#64748b;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="1000" height="960" rx="24" fill="#ffffff"/>
+  <text x="500" y="48" text-anchor="middle" font-size="28" font-weight="700">Claude 本地隐私与固定出口流程</text>
+  <text x="500" y="79" class="body">减少本地残留与出口漂移，保持可控、稳定的使用环境</text>
+
+  <rect x="28" y="104" width="944" height="208" rx="20" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5"/>
+  <circle cx="66" cy="142" r="17" fill="#2563eb"/>
+  <text x="66" y="149" text-anchor="middle" font-size="20" font-weight="700" style="fill:#ffffff">1</text>
+  <text x="98" y="150" class="panel-title">清理 Claude 本地残留</text>
+  <rect x="56" y="180" width="438" height="102" rx="14" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+  <text x="275" y="211" class="node-title">按授权定向清理</text>
+  <text x="275" y="239" class="body">登录状态 · Cookie · 站点存储</text>
+  <text x="275" y="265" class="body">缓存 · 相关记录</text>
+  <path d="M508 231H562" class="line"/>
+  <rect x="578" y="180" width="366" height="102" rx="14" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+  <text x="761" y="216" class="node-title">复查清理结果</text>
+  <text x="761" y="250" class="body">保留无关站点、MCP 和工作配置</text>
+
+  <path d="M500 315V344" class="line"/>
+  <rect x="28" y="360" width="944" height="560" rx="20" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+  <circle cx="66" cy="398" r="17" fill="#475569"/>
+  <text x="66" y="405" text-anchor="middle" font-size="20" font-weight="700" style="fill:#ffffff">2</text>
+  <text x="98" y="406" class="panel-title">固定出口 IP，异常时阻断联网</text>
+  <rect x="250" y="436" width="500" height="86" rx="14" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="500" y="470" class="node-title">专用代理 + 允许的出口 IP</text>
+  <text x="500" y="499" class="body">不提供直连或其他出口回退</text>
+  <path d="M500 524V547" class="line"/>
+  <path d="M500 558L690 620L500 682L310 620Z" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="500" y="613" text-anchor="middle" font-size="18" font-weight="700">实际出口在允许名单内</text>
+  <text x="500" y="639" text-anchor="middle" font-size="18" font-weight="700">且校验有效？</text>
+
+  <path d="M500 684V710H254V737" class="line"/>
+  <path d="M500 710H746V737" class="line"/>
+  <rect x="353" y="695" width="42" height="29" rx="9" fill="#f8fafc"/>
+  <text x="374" y="716" class="label">是</text>
+  <rect x="603" y="695" width="42" height="29" rx="9" fill="#f8fafc"/>
+  <text x="624" y="716" class="label">否</text>
+  <rect x="64" y="748" width="380" height="92" rx="14" fill="#ecfdf5" stroke="#34d399" stroke-width="1.5"/>
+  <text x="254" y="785" class="node-title" style="fill:#065f46">允许 Claude 受保护流量联网</text>
+  <text x="254" y="816" class="body">运行期间持续复查出口</text>
+  <rect x="556" y="748" width="380" height="92" rx="14" fill="#fff1f2" stroke="#fda4af" stroke-width="1.5"/>
+  <text x="746" y="777" class="node-title" style="fill:#9f1239">阻断受保护连接</text>
+  <text x="746" y="803" class="body">检测到 IP 不符或校验失效</text>
+  <text x="746" y="828" class="body">拒绝新连接，并关闭已有转发</text>
+
+  <path d="M254 842V878H46V620H297" class="line"/>
+  <path d="M746 842V878H954V620H703" class="line"/>
+  <text x="149" y="867" class="label">持续复查</text>
+  <text x="850" y="867" class="label">恢复后重新验证</text>
+  <text x="500" y="945" class="body">网络保护须实际部署并通过验收；安装 Skill 不会自动启用保护</text>
+</svg>
