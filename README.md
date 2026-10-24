@@ -4,6 +4,21 @@
 
 A Codex skill for scoped Claude sign-in cleanup, read-only Windows startup checks, and fail-closed networking workflows.
 
+## 项目背景
+
+这个项目源于作者使用 Claude 时反复遇到账号被封或受限的经历。为了让使用环境更可控，我们把电脑上 Claude 的本地残留清理、允许访问的出口 IP 配置，以及出口异常时的连接阻断整理成了可复用的 Skill。
+
+目标是减少本地状态残留、意外切换 IP 等环境因素可能带来的风控风险。具体包括定向处理桌面应用与浏览器的登录和站点记录，并指导部署固定出口保护：只有允许的 IP 且校验有效时才放行，检测到 IP 不符或校验失效时阻断受保护流量。
+
+**完整图文使用流程： [Claude 本地清理与固定 IP 配置教程](https://agi-master.cloud/claude-network.html#guard-route)**。教程按确认使用情况、下载 Skill、盘点与清理、填写固定出口、部署保护、实测验收和安全启动的顺序展开，可以逐步照着操作。
+
+## 作者
+
+| 作者 | 参与内容 |
+| --- | --- |
+| [SWL-1229](https://github.com/SWL-1229) | 项目发起与维护、使用场景、需求和实际体验反馈 |
+| GPT（通过 Codex 协作） | 方案梳理、脚本与文档编写、测试和排查辅助 |
+
 ## 两块核心流程
 
 减少本地状态残留和意外更换出口，让 Claude 的使用环境更可控、更稳定。清理按需执行；下图的网络保护流程需要实际部署并通过验收，安装 Skill 本身不会自动启用保护。
