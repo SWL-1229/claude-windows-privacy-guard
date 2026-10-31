@@ -363,6 +363,30 @@ def message(text):
     ctypes.windll.user32.MessageBoxW(None,text,'Claude 网页安全环境',0x40)
 
 
+def ensure_shared_services(root=ROOT, *, backend_factory=None):
+    """Start/check the same owned services as desktop, before awaiting ingress.
+
+    No Claude app/window launch, account access, settings edits or protection
+    removal. The existing backend rejects foreign listeners and process owners.
+    """
+    try:
+        root=leases.physical(Path(root),Path(root))
+        if backend_factory is None:
+            source=leases.physical(root/'native-launcher'/'native_desktop_launch.py',root)
+            raw=source.read_bytes()
+            if not 0<len(raw)<=200000:
+                raise ValueError('shared_service_source_invalid')
+            spec=importlib.util.spec_from_file_location('claude_browser_shared_service_backend',source)
+            if spec is None or spec.loader is None:
+                raise ValueError('shared_service_source_unavailable')
+            module=importlib.util.module_from_spec(spec)
+            exec(compile(raw,str(source),'exec'),module.__dict__)
+            backend_factory=module.WindowsBackend
+        return backend_factory(root).ensure_services()
+    except Exception:
+        raise LaunchFailure('shared_services_not_ready') from None
+
+
 def ensure_ingress_follower(root=ROOT):
     source = leases.physical(Path(root) / 'ingress_follow.py', Path(root))
     spec = importlib.util.spec_from_file_location('claude_browser_ingress_preflight', source)
@@ -400,6 +424,10 @@ def launch_failure_message(error):
         text='家宽出口探测暂未成功（exit_verification_unavailable）。这不表示时区或语言不合格。请确认 Clash 和链式家宽节点仍可用，等待入口切换完成后再试；保护仍保持，不会改走其他出口。'
     elif error.code=='exit_outside_allowlist':
         text='专用链当前出口不在允许名单中，已停止启动。请核对链式代理的家宽出口；保护不会放行其他 IP。'
+    elif error.code=='shared_services_not_ready':
+        text='Claude 专用网关、核心或 DNS 服务未能就绪（shared_services_not_ready）。已尝试安全启动并核对进程身份；网络保护保留，没有改走其他出口。'
+    elif error.code=='ingress_follower_not_ready':
+        text='Clash 入口节点跟随器尚未就绪（ingress_follower_not_ready）。这不代表家宽 IP 错误；请确认 Clash 已运行、链式入口为手动节点且住宅出口配置一致。网络保护保留。'
     if error.code=='existing_page_health_not_verified':
         text='当前 Claude 页面健康检查未通过。专用窗口、登录资料和网络保护均保留；请切换检查加载状态，稍后再点入口。没有重载或关闭现有工作。'
     if error.code=='existing_native_policy_not_verified':
@@ -420,6 +448,7 @@ def main():
         if not executable.is_file() or executable.resolve()!=executable.absolute():
             raise RuntimeError('专用环境运行时需要维护，已停止。')
     os.environ['PATH']=str(node.parent)+os.pathsep+os.environ.get('PATH','')
+    ensure_shared_services(ROOT)
     ensure_ingress_follower(ROOT)
     environment_preflight(ROOT)
     existing=existing_environment(ROOT,runtime=runtime)

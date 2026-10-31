@@ -33,9 +33,11 @@
     },
     {
       "path": "claude_browser_launch.py",
-      "upstream_sha256": "780a0ecec19e003181f6187bea8c1a98f45113131dac0806d80d45fc026be4f2",
-      "published_sha256": "3d02c42d7f651a1661196b5a2e224b75f2734d313e71c739782a974785576d75",
-      "changes": []
+      "upstream_sha256": "2fa931df7a51b14c989bf562a4443a14259015dcd0004dc07e9c1c7c43533142",
+      "published_sha256": "29fec553c53d64527fcd8383b7ba11bf463ca0702a89f5eedf9c44329331d8ad",
+      "changes": [
+        "Browser startup now starts/verifies existing owned services before waiting for ingress; no policy relaxation"
+      ]
     },
     {
       "path": "ingress_follow.py",
@@ -222,6 +224,14 @@
       "published_sha256": "f40b77debc549e3e2079ea8f79ef69b47cdca3fcdf6a594eb4b374e84baa0860",
       "changes": [
         "Personal IP fixture replaced with documentation IP where applicable; offline fixtures only"
+      ]
+    },
+    {
+      "path": "privacy-qa/test_browser_service_preflight.py",
+      "upstream_sha256": null,
+      "published_sha256": "0ab6b56473e945179d094cdcad8a6e1d6f10f3d098dcbf8a86b54963f05251f4",
+      "changes": [
+        "New offline service order and failure-closed fixtures; no user profile or live requests"
       ]
     }
   ]
