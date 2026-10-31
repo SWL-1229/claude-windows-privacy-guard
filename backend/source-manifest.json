@@ -209,10 +209,11 @@
     {
       "path": "privacy-qa/claude_environment_controller.test.mjs",
       "upstream_sha256": "22c6e727af3ef4f0e6ce50fc80bfc03e1d98428298f84c63643e79356e9b1e18",
-      "published_sha256": "80655bb5b66912a63c3804d6f69d1e10a6b326f0ecea530aefd4eb66e4d222ae",
+      "published_sha256": "fca898469dc4f54a9fdde95bf74a794c0aa67a94d384bad3390d4beb1697e4de",
       "changes": [
         "Personal IP fixture replaced with documentation IP where applicable; offline fixtures only",
-        "Offline fixtures updated to current source contracts: native RTC proof, bounded held probes, native browser metadata and required language flags"
+        "Offline fixtures updated to current source contracts: native RTC proof, bounded held probes, native browser metadata and required language flags",
+        "Canonicalize the disposable test temp directory on Windows short-path CI environments; production rejection unchanged"
       ]
     },
     {

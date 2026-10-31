@@ -187,7 +187,8 @@ test('target URL remains private even after navigation and activation',async()=>
   await f.controller.activate();const output=JSON.stringify(f.statuses);assert.equal(output.includes('private-updated'),false);assert.equal(output.includes('not-real'),false);
 });
 test('exact empty lifecycle markers are consumed once; payloads and directories refused',async()=>{
-  const base=await fs.mkdtemp(path.join(os.tmpdir(),'claude-controller-marker-'));
+  const tempRoot=await fs.realpath(os.tmpdir());
+  const base=await fs.realpath(await fs.mkdtemp(path.join(tempRoot,'claude-controller-marker-')));
   const statusPath=path.join(base,'environment-browser-123.json');
   try{
     assert.equal(await consumeLifecycleMarker(statusPath,'.activate'),false);
@@ -198,7 +199,7 @@ test('exact empty lifecycle markers are consumed once; payloads and directories 
     await assert.rejects(consumeLifecycleMarker(statusPath,'.arbitrary'));
     await fs.unlink(statusPath+'.stop');await fs.mkdir(statusPath+'.stop');await assert.rejects(consumeLifecycleMarker(statusPath,'.stop'));
   }finally{
-    assert.equal(path.dirname(base),os.tmpdir());assert.ok(path.basename(base).startsWith('claude-controller-marker-'));
+    assert.equal(path.dirname(base),tempRoot);assert.ok(path.basename(base).startsWith('claude-controller-marker-'));
     await fs.rm(base,{recursive:true,force:true});
   }
 });
