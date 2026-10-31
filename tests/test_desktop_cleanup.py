@@ -160,6 +160,73 @@ class DesktopCleanupTests(unittest.TestCase):
         self.assertEqual(second["login_ui_keys_selected"], [])
         self.assertEqual(self.snapshot(), after_first)
 
+    def test_modern_oauth_and_device_records_are_removed_without_exposing_values(self):
+        self.populate()
+        config=json.loads((self.root/'config.json').read_text())
+        config.update({'lastKnownAccountUuid':'fixture-account',
+            'oauth:tokenCache':{'secret':'fixture-auth-do-not-report'},
+            'oauth:tokenCacheV2':'fixture-auth-do-not-report',
+            'unrelatedTokenPreference':'keep'})
+        self.write('config.json',json.dumps(config))
+        self.write('ant-device-registry.json','{"fixture":"fixture-auth-do-not-report"}')
+        self.write('plan-usage-history.json','{"samples":["fixture"]}')
+        self.write('claude-code-sessions/keep.txt','user work')
+        self.write('local-agent-mode-sessions/keep.txt','cowork work')
+        report=cleanup.clean_owned_root(self.root,[self.root],True)
+        after=json.loads((self.root/'config.json').read_text())
+        self.assertFalse(set(cleanup.CONFIG_LOGIN_KEYS)&set(after))
+        self.assertEqual(after['unrelatedTokenPreference'],'keep')
+        self.assertEqual(report['login_ui_keys_remaining'],[])
+        self.assertTrue(report['normal_config_verified'])
+        self.assertNotIn('fixture-auth-do-not-report',json.dumps(report))
+        for name in ('ant-device-registry.json','plan-usage-history.json'):self.assertFalse((self.root/name).exists())
+        self.assertEqual((self.root/'claude-code-sessions/keep.txt').read_text(),'user work')
+        self.assertEqual((self.root/'local-agent-mode-sessions/keep.txt').read_text(),'cowork work')
+
+    def test_discovery_includes_modern_and_legacy_roots_only_for_installed_family(self):
+        local=self.base/'Local';roaming=self.base/'Roaming'
+        modern=local/'Claude-Data/claude_pzs8sxrjxfjjc'
+        legacy=local/'Packages/Claude_pzs8sxrjxfjjc/LocalCache/Roaming/Claude'
+        foreign=local/'Claude-Data/not-claude'
+        for p in (modern,legacy,foreign):p.mkdir(parents=True)
+        package={'PackageFamilyName':'Claude_pzs8sxrjxfjjc'}
+        self.assertEqual(set(cleanup.discover_roots([package],local,roaming)),{modern,legacy})
+        self.assertEqual(cleanup.discover_roots([],local,roaming),[])
+        self.assertEqual(cleanup.discover_roots([{'PackageFamilyName':'not-claude'}],local,roaming),[])
+
+    def test_all_discovered_cleans_modern_and_legacy_after_prevalidation(self):
+        self.populate();second=self.base/'second';second.mkdir()
+        (second/'ant-did').write_text('fixture')
+        with self.main_environment('--all-discovered','--apply') as (output,discover,_):
+            discover.return_value=([],[self.root,second]);cleanup.main()
+        result=json.loads(output.getvalue())
+        self.assertEqual(len(result['profiles']),2)
+        self.assertTrue(all(p['cookies_after']==0 for p in result['profiles']))
+        self.assertFalse((second/'ant-did').exists())
+
+    def test_all_roots_prevalidated_before_first_deletion(self):
+        self.populate();second=self.base/'second';(second/'Network').mkdir(parents=True)
+        (second/'Network/Cookies').write_bytes(b'invalid database')
+        before=self.snapshot()
+        with self.main_environment('--all-discovered','--apply') as (_,discover,_):
+            discover.return_value=([],[self.root,second])
+            with self.assertRaises(sqlite3.DatabaseError):cleanup.main()
+        self.assertEqual(self.snapshot(),before)
+
+    def test_apply_all_without_known_roots_is_not_silent_success(self):
+        with self.main_environment('--all-discovered','--apply') as (_,discover,_):
+            discover.return_value=([],[])
+            with self.assertRaisesRegex(RuntimeError,'No known Claude data roots'):cleanup.main()
+
+    def test_redirected_configuration_refused_before_cleanup(self):
+        self.write('Cache/keep','unchanged');outside=self.base/'external-config';outside.mkdir()
+        (outside/'data').write_text('unchanged')
+        self.make_directory_redirect(self.root/'config.json',outside)
+        with self.assertRaisesRegex(RuntimeError,'redirected|Reparse/symlink'):
+            cleanup.clean_owned_root(self.root,[self.root],True)
+        self.assertEqual((self.root/'Cache/keep').read_text(),'unchanged')
+        self.assertEqual((outside/'data').read_text(),'unchanged')
+
     def test_unknown_cookie_schema_refuses_before_any_deletion(self):
         self.make_cookies(recognized=False)
         self.write("Cache/keep-if-refused", "must survive")

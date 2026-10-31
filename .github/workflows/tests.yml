@@ -21,3 +21,4 @@ jobs:
         run: |
           python -X utf8 scripts/launch_preflight.py --help
           python -X utf8 scripts/desktop_cleanup.py --help
+          python -X utf8 scripts/layout_inventory.py --help

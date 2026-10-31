@@ -13,27 +13,33 @@ STORES=('Network','Local Storage','Session Storage','IndexedDB','WebStorage',
         'Cache','Code Cache','GPUCache','GPUPersistentCache','DawnGraphiteCache',
         'DawnWebGPUCache','GrShaderCache','ShaderCache','Crashpad','logs','sentry','Sessions')
 FILES=('ant-did','fcache','Cookies','Cookies-journal','Cookies-wal','Cookies-shm',
+       'ant-device-registry.json','plan-usage-history.json',
        'Login Data','Login Data-journal','Login Data-wal','Login Data-shm',
        'Network Persistent State','TransportSecurity','SharedStorage',
        'SharedStorage-wal','SharedStorage-shm','DIPS','DIPS-journal','DIPS-wal','DIPS-shm',
        'declarative_performance_observer.db','declarative_performance_observer.db-journal',
        'declarative_performance_observer.db-wal','declarative_performance_observer.db-shm')
 PRESERVE=('claude_desktop_config.json','git-worktrees.json','Local State','Preferences')
-CONFIG_LOGIN_KEYS=('windowSizeWasSignedIn','planUsageLastTrayOpenAt')
+CONFIG_LOGIN_KEYS=('windowSizeWasSignedIn','planUsageLastTrayOpenAt',
+                   'lastKnownAccountUuid','oauth:tokenCache','oauth:tokenCacheV2')
 
 def powershell(script):
     p=subprocess.run(['powershell.exe','-NoProfile','-NonInteractive','-Command',script],
                      capture_output=True,text=True,encoding='utf-8',errors='replace',check=True)
     return json.loads(p.stdout.lstrip('\ufeff').strip() or '[]')
 
-def discover():
-    packages=powershell("[Console]::OutputEncoding=[Text.UTF8Encoding]::new(); @(Get-AppxPackage -Name Claude | Select-Object Name,PackageFamilyName,PackageFullName,InstallLocation) | ConvertTo-Json -Compress")
-    if isinstance(packages,dict):packages=[packages]
-    local=Path(os.environ['LOCALAPPDATA']);roaming=Path(os.environ['APPDATA'])
+def discover_roots(packages,local,roaming):
+    """Known layouts only; package presence gates the modern MSIX layout."""
+    if not isinstance(packages,list) or any(not isinstance(p,dict) for p in packages):
+        raise RuntimeError('Unsupported package discovery result')
+    local=Path(local);roaming=Path(roaming)
     candidates=[roaming/'Claude',local/'Claude']
     for pkg in packages:
         family=pkg.get('PackageFamilyName','')
         if family=='Claude_pzs8sxrjxfjjc':
+            # Current MSIX releases use this physical Electron userData root.
+            # Only the installed, exact known family is eligible; no globbing.
+            candidates.append(local/'Claude-Data'/family.lower())
             candidates.append(local/'Packages'/family/'LocalCache'/'Roaming'/'Claude')
             candidates.append(local/'Packages'/family/'LocalCache'/'Local'/'Claude')
     roots=[]
@@ -45,7 +51,12 @@ def discover():
             if any(part.lower().startswith('openai.codex_') for part in real.parts):
                 raise RuntimeError('Claude path redirected into Codex package; locate real app root explicitly')
             if real not in roots:roots.append(real)
-    return packages,roots
+    return roots
+
+def discover():
+    packages=powershell("[Console]::OutputEncoding=[Text.UTF8Encoding]::new(); @(Get-AppxPackage -Name Claude | Select-Object Name,PackageFamilyName,PackageFullName,InstallLocation) | ConvertTo-Json -Compress")
+    if isinstance(packages,dict):packages=[packages]
+    return packages,discover_roots(packages,os.environ['LOCALAPPDATA'],os.environ['APPDATA'])
 
 def assert_closed():
     found=powershell("[Console]::OutputEncoding=[Text.UTF8Encoding]::new(); @(Get-CimInstance Win32_Process -Filter \"Name='Claude.exe'\" | Select-Object ProcessId) | ConvertTo-Json -Compress")
@@ -93,6 +104,10 @@ def clean_owned_root(root,allowed_roots,apply=False):
         raise RuntimeError('Root is not one of the discovered Claude Desktop data roots')
     targets=[root/n for n in (*STORES,*FILES) if (root/n).exists() or (root/n).is_symlink()]
     for p in targets:validate_tree(p,root)
+    # Config is selectively rewritten, so validate it as strictly as deletion
+    # targets. A symlink/junction must never redirect a write outside this root.
+    for name in (*PRESERVE,'config.json'):
+        validate_tree(root/name,root)
     preserved={n:digest(root/n) for n in PRESERVE}
     config=root/'config.json';data=None;keys=[]
     if config.is_file():
@@ -121,16 +136,26 @@ def clean_owned_root(root,allowed_roots,apply=False):
         if not report['preserved_files_verified']:raise RuntimeError('Preserved configuration changed during cleanup')
         report['remaining_selected_entries']=[n for n in (*STORES,*FILES) if (root/n).exists()]
         report['cookies_after']=cookie_count(root)
-        if report['remaining_selected_entries'] or report['cookies_after']:
+        report['login_ui_keys_remaining']=[]
+        if config.is_file():
+            after=json.loads(config.read_text(encoding='utf-8-sig'))
+            report['login_ui_keys_remaining']=[k for k in CONFIG_LOGIN_KEYS if k in after]
+            expected={k:v for k,v in data.items() if k not in CONFIG_LOGIN_KEYS}
+            if after!=expected:raise RuntimeError('Normal application configuration changed during cleanup')
+        report['normal_config_verified']=True
+        if report['remaining_selected_entries'] or report['cookies_after'] or report['login_ui_keys_remaining']:
             raise RuntimeError('Selected login stores were recreated or incompletely removed')
     return report
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--root',help='Exact discovered Claude data directory')
+    scope=p.add_mutually_exclusive_group()
+    scope.add_argument('--root',help='Exact discovered Claude data directory')
+    scope.add_argument('--all-discovered',action='store_true',help='Explicitly select all currently discovered Claude Desktop roots')
     p.add_argument('--apply',action='store_true');p.add_argument('--report',type=Path)
     a=p.parse_args();packages,roots=discover()
-    if a.apply and not a.root:raise RuntimeError('--apply requires --root; inventory first')
+    if a.apply and not (a.root or a.all_discovered):raise RuntimeError('--apply requires --root or --all-discovered; inventory first')
+    if a.apply and not roots:raise RuntimeError('No known Claude data roots found; nothing was cleaned')
     assert_closed()
     report_file=None
     if a.report:
@@ -144,6 +169,10 @@ def main():
     chosen=[Path(a.root)] if a.root else roots
     completed=[]
     try:
+        # Reject an unsupported later root before deleting any earlier root.
+        # This is prevalidation, not an all-filesystem atomic transaction.
+        if a.apply:
+            for root in chosen:clean_owned_root(root,roots,False)
         for root in chosen:completed.append(clean_owned_root(root,roots,a.apply))
         result={'at':datetime.datetime.now().astimezone().isoformat(),'packages':packages,
                 'discovered_roots':[str(r) for r in roots],'applied':a.apply,'profiles':completed,

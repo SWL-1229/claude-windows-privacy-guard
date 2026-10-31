@@ -41,12 +41,39 @@ A Codex skill for scoped Claude sign-in cleanup, read-only Windows startup check
 | 内容 | 本仓库提供 |
 | --- | --- |
 | 桌面登录清理 | `desktop_cleanup.py`，默认只读，显式 `--apply` 才删除 |
+| 运行时资料目录盘点 | `layout_inventory.py`，可在 Claude 运行时检查当前包与实际 `--user-data-dir`，不输出完整启动参数 |
 | 启动前检查 | `launch_preflight.py`，只读检查包身份、主进程代理参数与端口监听 |
 | 软件更新与旧进程防复发 | 分步骤排查、维护及验证流程 |
 | 指定出口 / WFP / 浏览器代理保护 | 实施与验收方法；不包含网络保护安装器或代理服务 |
 | 浏览器定向清理 | 操作方法与兼容性要点；不包含通用数据库修改器 |
 
 **安装 Skill 本身不会创建防火墙规则、启动代理或开启断网保护。** 预检通过也不代表实际出口、WFP、浏览器策略已经有效。此工具不用于伪造设备指纹，也不承诺规避封号。
+
+## 在自己的电脑复现
+
+完整步骤见 [跨电脑复现流程](references/replication.md)，完成标准见 [逐项验收清单](references/acceptance.md)。执行顺序为：安装 Skill → 盘点真实安装与目录 → 选择清理范围 → 核对自有出口及已有网络后端 → 实施 → 验收 → 从安全入口使用。
+
+每个人填写自己的出口 IP、代理协议/端口、入口节点和语言/时区要求。仓库不附带作者的私人参数，也不把作者的本地断网网关、WFP/DNS 服务或 DevTools 控制器包装成已经可供别人安装的程序。**本版可以直接运行清理与盘点；完整断网环境仍需要实际后端。**
+
+安装后可以把下面这段交给 Codex：
+
+```text
+使用 $claude-windows-privacy-guard 按 references/replication.md 检查我的电脑。
+先运行只读布局盘点，核对新版 Claude 的实际资料目录和已有保护工具。
+我希望复现本地登录清理与固定出口保护；保留 MCP、Code/Cowork 工作文件及其他站点数据。
+缺失的出口参数请向我确认；未提供的网络后端请列出缺项，不创建空壳安全快捷方式。
+实际清理和部署应按我确认的范围执行，最后按验收清单分别报告通过及未验证项。
+```
+
+如果只需要清理登录，用后面的“清理桌面软件”请求即可，不必部署整套网络。
+
+## 本版兼容改进
+
+- 识别新版 `%LOCALAPPDATA%\Claude-Data\claude_pzs8sxrjxfjjc`，与旧 MSIX 目录一起盘点；该布局已在 4.4212 系列实际核对。未知/自定义目录标记待检查，不自动扩大删除范围。
+- 定向移除已确认的 `config.json` OAuth 缓存、最近账户字段、本地设备登记与用量历史。只删 Cookie 可能仍保留登录状态。
+- 新增 `--all-discovered`，明确选择同时清理本次发现的新旧桌面目录；执行前预检全部所选根，清理后复查正常配置和登录字段。
+- 拒绝重解析目录及配置重定向；保留 MCP、普通配置和工作内容，不按 `token` 等关键词泛删文件。
+- 补充链式代理入口切换、探测期限、刷新恢复、DevTools 依赖和 UDP/IPv6 的实测标准，区分“未验证”和“通过”。
 
 ## 安装
 
@@ -61,6 +88,8 @@ git clone https://github.com/SWL-1229/claude-windows-privacy-guard.git (Join-Pat
 ```
 
 已有同名目录时先检查现有改动，不要覆盖私人配置。安装后在新对话中使用：
+
+已有 Git 克隆的用户可先运行 `git status --short` 检查本地改动，再在工作区无未保存修改时执行 `git pull --ff-only`。保留自己添加的本地资料，不要使用 `reset --hard` 或删除目录强行升级；更新后在新对话中使用新版 Skill。
 
 ```text
 使用 $claude-windows-privacy-guard 检查 Claude 为什么无法连接。
@@ -104,6 +133,12 @@ python -X utf8 scripts/launch_preflight.py --gateway-port 17894
 桌面资料盘点：
 
 ```powershell
+python -X utf8 scripts/layout_inventory.py
+```
+
+这个布局盘点可在应用运行时执行，只读检查当前包及进程暴露的资料路径；`review_needed` 表示需要人工核对。它不会读取 Cookie/OAuth 值，不会清理数据。完整退出 Claude 后，再运行存储盘点：
+
+```powershell
 python -X utf8 scripts/desktop_cleanup.py
 ```
 
@@ -115,12 +150,31 @@ python -X utf8 scripts/desktop_cleanup.py --root '<本次发现的绝对数据�
 
 尖括号内容是占位说明，不能直接执行。清理会删除桌面应用的网站缓存、离线状态和未同步草稿；不删除云端聊天，不自动撤销服务端会话，不清独立 Claude Code CLI。
 
+如果已确认全部已发现桌面目录均在清理授权内，可避免漏掉新旧并存的目录：
+
+```powershell
+$cleanupReport = Join-Path $env:TEMP ("claude-cleanup-" + [guid]::NewGuid().ToString('N') + '.json')
+python -X utf8 scripts/desktop_cleanup.py --all-discovered --apply --report $cleanupReport
+python -X utf8 scripts/desktop_cleanup.py
+```
+
+清理不能撤销，也不会备份认证值。报告中应看到每个已选根 `cookies_after: 0`、`remaining_selected_entries: []`、`login_ui_keys_remaining: []`、`preserved_files_verified: true` 和 `normal_config_verified: true`。最后再盘点一次；如需要通过欢迎页确认，应在当前网络保护已验收后打开，不能替用户登录。
+
+## DevTools 是什么，需要一直开着吗？
+
+DevTools 是 Claude 所用 Electron/Chromium 的内置开发者工具，不是本项目制作的。项目作者编写的是调用与验证它的启动、监控流程。相关接口见 [Electron 官方文档](https://www.electronjs.org/docs/latest/api/web-contents#contentsopendevtoolsoptions)。
+
+是否需要附着、是否可最小化取决于实际部署的控制器。本机曾验证的方案依赖附着窗口，不能把这个结果当成所有设备的通用行为。主进程 Node Inspector 是另一种临时诊断接口，使用后应关闭，不能开放给局域网。公开 Skill 不会为其他人自动安装这套控制器。
+
+日常使用从已验收的安全入口打开，不必每次清理登录；更新 Claude 后重新核对包和规则。运行中临时测不到出口不等于 IP 已变，按有效期执行暂停、复验与恢复；不要直接关闭保护，也不要宣称逐包零延迟。
+
 ## 验证与开发
 
 ```powershell
 python -X utf8 -m unittest discover -s tests -v
 python -X utf8 scripts/launch_preflight.py --help
 python -X utf8 scripts/desktop_cleanup.py --help
+python -X utf8 scripts/layout_inventory.py --help
 ```
 
 测试使用临时目录和模拟进程信息，不清理真实应用资料，不修改真实网络规则。Windows CI 会运行同一套测试。测试证明辅助脚本的行为，不代替每台电脑的实际联网验收。
