@@ -1,0 +1,227 @@
+{
+  "schema": 1,
+  "snapshot_date": "2026-10-31",
+  "origin": "Maintained local source snapshot; no profiles, credentials, binaries or historical reports.",
+  "status": "experimental_portable_source_snapshot",
+  "live_installation_modified": false,
+  "files": [
+    {
+      "path": "guard.py",
+      "upstream_sha256": "650b29ba619a04322b3b5be8b52a252f60846b7c92d2372811e69e77884839a7",
+      "published_sha256": "7786414fb0631a26dfce3fa4e7032bb6790088bc03c4775a4e5f8a439cc8bb6f",
+      "changes": [
+        "Installation-local allowlist ceiling; distributed default empty"
+      ]
+    },
+    {
+      "path": "environment_lease.py",
+      "upstream_sha256": "97666e08bb314921755c0e05c1c551742148152cd92c72e1f030f52f4aec8232",
+      "published_sha256": "686084858f3eaf16fb07a57e2ab379e5779a2508a75a6be8bcf18e2b5d08c579",
+      "changes": []
+    },
+    {
+      "path": "environment_watchdog.py",
+      "upstream_sha256": "847a0b374ea32a9274e6e36e8e5ea075b25fcaa0c8122dce332e756a5788593b",
+      "published_sha256": "86f436ead695a496f6711b850ba9d473141d77301136541e2e20e2715eb0a9b4",
+      "changes": []
+    },
+    {
+      "path": "browser_system_timezone.py",
+      "upstream_sha256": "d4011e4d79123222494a99d1cc6f4ed11f9a193275b7cf32b292943673a69685",
+      "published_sha256": "d4011e4d79123222494a99d1cc6f4ed11f9a193275b7cf32b292943673a69685",
+      "changes": []
+    },
+    {
+      "path": "claude_browser_launch.py",
+      "upstream_sha256": "780a0ecec19e003181f6187bea8c1a98f45113131dac0806d80d45fc026be4f2",
+      "published_sha256": "3d02c42d7f651a1661196b5a2e224b75f2734d313e71c739782a974785576d75",
+      "changes": []
+    },
+    {
+      "path": "ingress_follow.py",
+      "upstream_sha256": "769c9efdc98c9397f5f0e174c616793b6f075c2c055ae9f3ae317d8f2e59de15",
+      "published_sha256": "1e0f9717b35e05f3c5dd927a4a968028c075e3ed7a1b284ed1c029fa98226372",
+      "changes": [
+        "Physical source root and installation-local residential endpoint"
+      ]
+    },
+    {
+      "path": "dns_service.py",
+      "upstream_sha256": "e849619789daf154a6bf3ee4bac47a738747e44a1a56451b641f9ed93b67c140",
+      "published_sha256": "1056d8a49c5536b5abfd226cec0142404b2da19250f7176c7603ff98361825a6",
+      "changes": []
+    },
+    {
+      "path": "native_monitor_recovery.py",
+      "upstream_sha256": "acdcf343f5038cbdb79005baec647ac87dbc818229f8cb90232233d3431f00cc",
+      "published_sha256": "acdcf343f5038cbdb79005baec647ac87dbc818229f8cb90232233d3431f00cc",
+      "changes": []
+    },
+    {
+      "path": "browser_policy.py",
+      "upstream_sha256": "531510332bea51bde60467748667cd26af7fe9f4f9f3341339983970b109d7f7",
+      "published_sha256": "531510332bea51bde60467748667cd26af7fe9f4f9f3341339983970b109d7f7",
+      "changes": []
+    },
+    {
+      "path": "NetworkProbe.cs",
+      "upstream_sha256": "d8f646e83d1c66d9a111bd2da3cc6ed6318683b7b08fcd8f45901b44ee9cd8b4",
+      "published_sha256": "333dd7d341b7e88d8fa18f1a82e724d47ab51d62338cbf14270b984b669f2ffa",
+      "changes": [
+        "Require explicit operator allowlist argument; no personal IP"
+      ]
+    },
+    {
+      "path": "native-launcher/native_desktop_launch.py",
+      "upstream_sha256": "a24d617ab9efef735b7decaab75e42b7445fe1815262e9b5bdb8d2ed8bf7ad0a",
+      "published_sha256": "3b6d4dd9003f30da17a89712548a146c1be87f3a815d9c8c97fd9ae52e9c5c05",
+      "changes": []
+    },
+    {
+      "path": "native-launcher/native_rtc_policy.py",
+      "upstream_sha256": "fa7fb161927a3f54513477338dddc00fa11c1ede7c23b3cc7110c7273fd25068",
+      "published_sha256": "72f9f0f86cef6b425856d680ae57fac1372d2b67ef769a83c1b57e08e8c6a7bc",
+      "changes": []
+    },
+    {
+      "path": "native-launcher/native_rtc_runtime.js",
+      "upstream_sha256": "c6e1b9859947674e977f7a0b1544605671d67ae1049856d07ce84dba0febac72",
+      "published_sha256": "c2ecce74945b25e5894df8522b3472d835181ba760eda65b42b074df3bdabaa9",
+      "changes": []
+    },
+    {
+      "path": "native-launcher/foreground_gui.py",
+      "upstream_sha256": "81e5ba78288e5e9e8a8bbc17763f6d1deed65cb3137c9b4b839d3a859d735b46",
+      "published_sha256": "81e5ba78288e5e9e8a8bbc17763f6d1deed65cb3137c9b4b839d3a859d735b46",
+      "changes": []
+    },
+    {
+      "path": "native-launcher/DevToolsUi.cs",
+      "upstream_sha256": "c6556c1980710a09c1d92722ba54ed8b0c1996c4b68a19b69b945a8da421f6dc",
+      "published_sha256": "878597111d321b5ea78d51f530d424a7bd08e5de5221fc2f29b027efb3ab2f11",
+      "changes": [
+        "No personal public-IP RTC exceptions; raw public candidates outside policy"
+      ]
+    },
+    {
+      "path": "native-launcher/MainInspectorUiCandidate.cs",
+      "upstream_sha256": "81e01ae61f9e129e38846bc29c6bda9d2f6c88c4f7a7276020880f92d3cc040a",
+      "published_sha256": "158f8618bd24485aef8c97e4902f5f5b24a0c19da2d3e82707b0d2c25d30e237",
+      "changes": []
+    },
+    {
+      "path": "native-launcher/MainInspectorMenuDiagnostic.cs",
+      "upstream_sha256": "52b711805122e469294eba9bea26d5f5c2f03b20d903027a85f642600313a0cc",
+      "published_sha256": "52b711805122e469294eba9bea26d5f5c2f03b20d903027a85f642600313a0cc",
+      "changes": []
+    },
+    {
+      "path": "wfp/ClaudeWfpGuard.cs",
+      "upstream_sha256": "189f341265009e6690b040b5b1181f260ea8587946a2bfddeaf7c868f4695d88",
+      "published_sha256": "189f341265009e6690b040b5b1181f260ea8587946a2bfddeaf7c868f4695d88",
+      "changes": []
+    },
+    {
+      "path": "dns/scoped_dns_stub.py",
+      "upstream_sha256": "3c436ea5125b81fc75e5a38bcc9f3ea310f2b018ccea7482aead6c1676f0d868",
+      "published_sha256": "8405398f9eb09273e157f3044467c98c2c1e3f63c0c779b61cd08746eb177bc1",
+      "changes": []
+    },
+    {
+      "path": "dns/install-scoped-dns.ps1",
+      "upstream_sha256": "0171e89d22c0e8c3e4adc2e0427cbe81f547d2335af1777b0e2acfb37c3ae983",
+      "published_sha256": "0171e89d22c0e8c3e4adc2e0427cbe81f547d2335af1777b0e2acfb37c3ae983",
+      "changes": []
+    },
+    {
+      "path": "privacy-qa/environment_launch.py",
+      "upstream_sha256": "3373d074ca6a549c694e2fb6280fa97f387c5da53ce05960f460e28f52937870",
+      "published_sha256": "597195e07b51165c238b2d4d9ae899dbd3180fec71d0ceff087e0407170ec3e7",
+      "changes": [
+        "Installation-local allowlist ceiling"
+      ]
+    },
+    {
+      "path": "privacy-qa/launch_failure_diagnostic.py",
+      "upstream_sha256": "276419de529c858efbfb658510429908c944507658c61bdbca1431b463769b12",
+      "published_sha256": "98f394ef253eef1f83bcdbf708a240a88441dc4a145ba7911ae495b3dd770eab",
+      "changes": []
+    },
+    {
+      "path": "privacy-qa/status_publisher.py",
+      "upstream_sha256": "524a47a52a907739fc6379016c8d229c0d84a2bd0e32d4a5ef7e4c3f26ab5092",
+      "published_sha256": "9a700da35c47c392c7471824b42e4c660345092da3901a420b0a1aa67774cfed",
+      "changes": []
+    },
+    {
+      "path": "privacy-qa/status_publisher.mjs",
+      "upstream_sha256": "826ad0db08bbba4b89a939121b9da3bbceb7250e8724374f51359505ffd8c9b2",
+      "published_sha256": "826ad0db08bbba4b89a939121b9da3bbceb7250e8724374f51359505ffd8c9b2",
+      "changes": []
+    },
+    {
+      "path": "privacy-qa/claude_environment_controller.mjs",
+      "upstream_sha256": "2847e257c7d17d77ac0fadf49699957b671779baa19f9e6c2571a7e254b5b695",
+      "published_sha256": "0c7ef604ca582bcd22a9af3562bffb23166f6661815df1b0b5d76bc81446d116",
+      "changes": []
+    },
+    {
+      "path": "native-launcher/test_native_launch.py",
+      "upstream_sha256": "381dac68e7a40d1a79375ce8b66beb1c400a47608559d59de1a167d4880d6255",
+      "published_sha256": "57f932f7d47da912865ac3a174c6694bf96a99ee0d1d745694190f5413acbc56",
+      "changes": [
+        "Personal IP fixture replaced with documentation IP where applicable; offline fixtures only",
+        "Offline fixtures updated to current source contracts: native RTC proof, bounded held probes, native browser metadata and required language flags"
+      ]
+    },
+    {
+      "path": "native-launcher/test_foreground_gui.py",
+      "upstream_sha256": "60dff7deeac134fcf3bc9dcaeda5af0868d7b3bb7e70773278c4172e1ae581f2",
+      "published_sha256": "60dff7deeac134fcf3bc9dcaeda5af0868d7b3bb7e70773278c4172e1ae581f2",
+      "changes": [
+        "Personal IP fixture replaced with documentation IP where applicable; offline fixtures only"
+      ]
+    },
+    {
+      "path": "native-launcher/test_scoped_launch_environment.py",
+      "upstream_sha256": "3d9a7f919bb1bf145f6392bc1852011d9b2f745504cc9f98c0989951f8d90a7d",
+      "published_sha256": "3d9a7f919bb1bf145f6392bc1852011d9b2f745504cc9f98c0989951f8d90a7d",
+      "changes": [
+        "Personal IP fixture replaced with documentation IP where applicable; offline fixtures only"
+      ]
+    },
+    {
+      "path": "native-launcher/test_helper_foreground_handshake.py",
+      "upstream_sha256": "c89ef177c39e6d9dc65c91619bad251195a1e09d11724536036f370ab4b092a4",
+      "published_sha256": "c89ef177c39e6d9dc65c91619bad251195a1e09d11724536036f370ab4b092a4",
+      "changes": [
+        "Personal IP fixture replaced with documentation IP where applicable; offline fixtures only"
+      ]
+    },
+    {
+      "path": "privacy-qa/test_status_publisher.py",
+      "upstream_sha256": "2a87c88e6a24e3e01dbca775c18138fe793da96ac43bfbf907daccdb7018ca0b",
+      "published_sha256": "2a87c88e6a24e3e01dbca775c18138fe793da96ac43bfbf907daccdb7018ca0b",
+      "changes": [
+        "Personal IP fixture replaced with documentation IP where applicable; offline fixtures only"
+      ]
+    },
+    {
+      "path": "privacy-qa/claude_environment_controller.test.mjs",
+      "upstream_sha256": "22c6e727af3ef4f0e6ce50fc80bfc03e1d98428298f84c63643e79356e9b1e18",
+      "published_sha256": "80655bb5b66912a63c3804d6f69d1e10a6b326f0ecea530aefd4eb66e4d222ae",
+      "changes": [
+        "Personal IP fixture replaced with documentation IP where applicable; offline fixtures only",
+        "Offline fixtures updated to current source contracts: native RTC proof, bounded held probes, native browser metadata and required language flags"
+      ]
+    },
+    {
+      "path": "privacy-qa/status_publisher.test.mjs",
+      "upstream_sha256": "f40b77debc549e3e2079ea8f79ef69b47cdca3fcdf6a594eb4b374e84baa0860",
+      "published_sha256": "f40b77debc549e3e2079ea8f79ef69b47cdca3fcdf6a594eb4b374e84baa0860",
+      "changes": [
+        "Personal IP fixture replaced with documentation IP where applicable; offline fixtures only"
+      ]
+    }
+  ]
+}

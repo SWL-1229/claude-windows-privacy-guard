@@ -2,6 +2,8 @@
 
 面向 Codex 的 Windows Skill：定向清理 Claude 本地登录状态，检查专用代理启动条件，并指导实施指定出口与失败关闭保护。
 
+**新增：[桌面工具与网页版隔离环境源码](backend/README.md)**。已公开可构建的实际后端源码、独立配置工具和离线测试，供审查与复用；尚未提供跨机器完整一键部署器。
+
 A Codex skill for scoped Claude sign-in cleanup, read-only Windows startup checks, and fail-closed networking workflows.
 
 ## 项目背景
@@ -44,7 +46,7 @@ A Codex skill for scoped Claude sign-in cleanup, read-only Windows startup check
 | 运行时资料目录盘点 | `layout_inventory.py`，可在 Claude 运行时检查当前包与实际 `--user-data-dir`，不输出完整启动参数 |
 | 启动前检查 | `launch_preflight.py`，只读检查包身份、主进程代理参数与端口监听 |
 | 软件更新与旧进程防复发 | 分步骤排查、维护及验证流程 |
-| 指定出口 / WFP / 浏览器代理保护 | 实施与验收方法；不包含网络保护安装器或代理服务 |
+| 指定出口 / WFP / 浏览器代理保护 | `backend/` 提供网关、WFP、DNS、桌面及隔离浏览器源码；附构建与配置工具，完整部署事务仍需审查和现场验收 |
 | 浏览器定向清理 | 操作方法与兼容性要点；不包含通用数据库修改器 |
 
 **安装 Skill 本身不会创建防火墙规则、启动代理或开启断网保护。** 预检通过也不代表实际出口、WFP、浏览器策略已经有效。此工具不用于伪造设备指纹，也不承诺规避封号。
@@ -53,7 +55,7 @@ A Codex skill for scoped Claude sign-in cleanup, read-only Windows startup check
 
 完整步骤见 [跨电脑复现流程](references/replication.md)，完成标准见 [逐项验收清单](references/acceptance.md)。执行顺序为：安装 Skill → 盘点真实安装与目录 → 选择清理范围 → 核对自有出口及已有网络后端 → 实施 → 验收 → 从安全入口使用。
 
-每个人填写自己的出口 IP、代理协议/端口、入口节点和语言/时区要求。仓库不附带作者的私人参数，也不把作者的本地断网网关、WFP/DNS 服务或 DevTools 控制器包装成已经可供别人安装的程序。**本版可以直接运行清理与盘点；完整断网环境仍需要实际后端。**
+每个人填写自己的出口 IP、代理协议/端口、入口节点和语言/时区要求。仓库不附带作者的私人参数。**本版可以直接运行清理与盘点；`backend/` 另提供实际后端的可构建源码快照，构建与配置文件准备不等于完成系统部署。** 公开副本默认空出口名单，未部署前保持拒绝，不生成伪造的保护登记。
 
 安装后可以把下面这段交给 Codex：
 
@@ -164,7 +166,7 @@ python -X utf8 scripts/desktop_cleanup.py
 
 DevTools 是 Claude 所用 Electron/Chromium 的内置开发者工具，不是本项目制作的。项目作者编写的是调用与验证它的启动、监控流程。相关接口见 [Electron 官方文档](https://www.electronjs.org/docs/latest/api/web-contents#contentsopendevtoolsoptions)。
 
-是否需要附着、是否可最小化取决于实际部署的控制器。本机曾验证的方案依赖附着窗口，不能把这个结果当成所有设备的通用行为。主进程 Node Inspector 是另一种临时诊断接口，使用后应关闭，不能开放给局域网。公开 Skill 不会为其他人自动安装这套控制器。
+是否需要附着、是否可最小化取决于实际部署的控制器。本机曾验证的方案依赖附着窗口，不能把这个结果当成所有设备的通用行为。主进程 Node Inspector 是另一种临时诊断接口，使用后应关闭，不能开放给局域网。公开 Skill 不会为其他人自动安装这套控制器；可审查并构建 [backend 源码](backend/README.md)，再按自己的机器部署验收。
 
 日常使用从已验收的安全入口打开，不必每次清理登录；更新 Claude 后重新核对包和规则。运行中临时测不到出口不等于 IP 已变，按有效期执行暂停、复验与恢复；不要直接关闭保护，也不要宣称逐包零延迟。
 

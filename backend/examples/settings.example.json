@@ -1,0 +1,9 @@
+{
+  "allowed_exit_ips": [],
+  "residential_server": "FILL_YOUR_OWN_PUBLIC_IPV4",
+  "core_executable": "C:/YOUR_RUNTIME/mihomo.exe",
+  "package_parent": "C:/Program Files/WindowsApps",
+  "python_executable": "C:/YOUR_RUNTIME/Python/python.exe",
+  "node_executable": "C:/YOUR_RUNTIME/Node/node.exe",
+  "browser_executable": "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe"
+}

@@ -1,0 +1,27 @@
+# Not usable as-is. Copy OUTSIDE the repository and fill your own credentials.
+# No DIRECT fallback, subscription providers or automatic selection groups.
+mixed-port: 17895
+bind-address: 127.0.0.1
+allow-lan: false
+ipv6: false
+mode: rule
+log-level: warning
+external-controller: 127.0.0.1:17896
+# configure.py generates a fresh local controller secret.
+proxies:
+  - name: PINNED-ENTRY
+    type: socks5
+    server: FILL_YOUR_ENTRY_SERVER
+    port: 1080
+    username: FILL_YOUR_ENTRY_USERNAME
+    password: FILL_YOUR_ENTRY_PASSWORD
+  - name: PINNED-RESIDENTIAL
+    type: socks5
+    server: FILL_YOUR_RESIDENTIAL_IPV4
+    port: 1080
+    username: FILL_YOUR_RESIDENTIAL_USERNAME
+    password: FILL_YOUR_RESIDENTIAL_PASSWORD
+    udp: false
+    dialer-proxy: PINNED-ENTRY
+rules:
+  - MATCH,PINNED-RESIDENTIAL

@@ -21,3 +21,12 @@ status.json
 installed.json
 *report*.json
 references/local-installation.md
+configured.json
+build-result.json
+hold.block
+*settings.local.json
+*core.local.yaml
+installation-allowlist.json
+browser-profiles/
+environment-leases/
+core/
