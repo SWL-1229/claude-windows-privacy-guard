@@ -14,6 +14,7 @@ description: 在 Windows 上检查、维护 Claude 桌面及浏览器的指定�
 - 清理 Chrome、Edge 或联想浏览器的相关登录：读 [browser-cleanup.md](references/browser-cleanup.md)。按域名和配置文件定向处理，不清其他站点。
 - 配置、修复、验证限定出口与断网保护：读 [exit-protection.md](references/exit-protection.md)。先发现实际安装与规则，再修复和实测。
 - 更新后无法连接、普通入口启动失败、旧进程复用错误代理：读 [startup-prevention.md](references/startup-prevention.md)，先只读检查再修复。历史报告不能替代当前验证。
+- 查看已有安全环境的运行状态：读 [实时面板说明](detector/README.md)。面板只观察既有部署，不安装保护；策略正常与泄露实测通过必须分开报告。
 
 公开版内置桌面清理、运行时布局盘点和只读启动预检脚本。网络保护后端源码、构建及配置准备工具见 [backend/README.md](backend/README.md)；它是实验性源码快照，未附完整跨机器部署事务或第三方运行时。浏览器定向清理仍是实施工作流，不含通用数据库修改器。不能把安装 Skill、构建成功或生成配置描述成已经开启断网保护。所有端口、允许出口和保护登记来自用户实际环境，不能套用示例或其他电脑的参数。
 

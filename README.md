@@ -1,10 +1,12 @@
 # Claude Windows Privacy Guard
 
-面向 Codex 的 Windows Skill：定向清理 Claude 本地登录状态，检查专用代理启动条件，并指导实施指定出口与失败关闭保护。
+Windows 上的 Claude 本地隐私与联网保护项目：提供 Codex Skill、可构建的桌面/隔离浏览器后端，以及现有保护的实时可视化面板。
 
-**新增：[桌面工具与网页版隔离环境源码](backend/README.md)**。已公开可构建的实际后端源码、独立配置工具和离线测试，供审查与复用；尚未提供跨机器完整一键部署器。
+**新增：[Claude 运行环境面板](detector/README.md)**。每秒自动展示现有保护的出口、放行/阻断原因、DNS 定向、WebRTC 策略、时区和语言。关闭面板不影响保护，不新增公网探测或 DevTools 操作。
 
-A Codex skill for scoped Claude sign-in cleanup, read-only Windows startup checks, and fail-closed networking workflows.
+[桌面工具与网页版隔离环境源码](backend/README.md) 提供可构建的实际后端、配置工具和离线测试；尚未提供跨机器完整一键部署器。实时面板连接你自己的已有部署，不代替安装与验收。
+
+A Windows toolkit and Codex skill for scoped Claude sign-in cleanup, fail-closed networking workflows, and a read-only live dashboard for an existing deployment.
 
 ## 项目背景
 
@@ -48,6 +50,7 @@ A Codex skill for scoped Claude sign-in cleanup, read-only Windows startup check
 | 软件更新与旧进程防复发 | 分步骤排查、维护及验证流程 |
 | 指定出口 / WFP / 浏览器代理保护 | `backend/` 提供网关、WFP、DNS、桌面及隔离浏览器源码；附构建与配置工具，完整部署事务仍需审查和现场验收 |
 | 浏览器定向清理 | 操作方法与兼容性要点；不包含通用数据库修改器 |
+| 实时运行环境面板 | `detector/` 每秒读取既有网关与进程绑定监控；支持桌面/专用网页切换、具体阻断原因、隐藏 IP 与报告导出 |
 
 **安装 Skill 本身不会创建防火墙规则、启动代理或开启断网保护。** 预检通过也不代表实际出口、WFP、浏览器策略已经有效。此工具不用于伪造设备指纹，也不承诺规避封号。
 
@@ -68,6 +71,33 @@ A Codex skill for scoped Claude sign-in cleanup, read-only Windows startup check
 ```
 
 如果只需要清理登录，用后面的“清理桌面软件”请求即可，不必部署整套网络。
+
+## 查看运行中的安全环境
+
+已在自己的电脑部署并验收后端后，在仓库根目录启动面板：
+
+```powershell
+pythonw -B detector/app.py
+```
+
+默认连接 `%USERPROFILE%\.claude-network-guard`。如果保护装在其他目录，使用 `--root` 指定**实际已部署目录**，不要指向尚未安装的构建输出。创建桌面快捷方式可运行：
+
+```powershell
+python -B -X utf8 detector/install_shortcut.py
+```
+
+脚本只创建【Claude 运行环境面板】快捷方式，不安装网关、防火墙或代理；已有同名快捷方式会保留并停止。然后从原来的 Claude 安全入口打开应用，面板自动识别，**不需要反复点击检测**。自定义目录和完整步骤见 [面板使用说明](detector/README.md)。
+
+| 面板显示 | 实际依据 |
+| --- | --- |
+| 家宽出口 / 放行、暂停或阻断 | 原网关的出口验证和当前许可；不另发查询请求 |
+| 入口跟随与锁定原因 | 当前入口跟随器报告，例如最终出口不是已固定家宽 |
+| DNS 防泄露路由 | 专用 DNS 服务身份和 Windows 当前有效 NRPT 定向；属于策略状态 |
+| 桌面时区、语言和 WebRTC | 当前进程绑定的有效监控证明与原生 WebRTC 策略 |
+| 专用网页环境 | 原生进程策略、启动实测和当前监控；不每秒执行页面脚本 |
+| UDP / IPv6 | 既有保护范围与可读证据；无权读取 WFP 时明确标注待核验 |
+
+面板区分“通过、异常、待验证、未运行”。保护阻断不等于已经泄露；DNS 路由正确、WebRTC 策略有效也不等于重新完成了权威 DNS、ICE 候选或 UDP/IPv6 流量实测。它不生成虚构的官方信任分，也不证明 IP 独享或不会封号。
 
 ## 本版兼容改进
 
@@ -177,6 +207,9 @@ python -X utf8 -m unittest discover -s tests -v
 python -X utf8 scripts/launch_preflight.py --help
 python -X utf8 scripts/desktop_cleanup.py --help
 python -X utf8 scripts/layout_inventory.py --help
+python -B -X utf8 -m unittest discover -s detector -p "test_*.py" -v
+python -B -X utf8 detector/app.py --help
+python -B -X utf8 detector/install_shortcut.py --help
 ```
 
 测试使用临时目录和模拟进程信息，不清理真实应用资料，不修改真实网络规则。Windows CI 会运行同一套测试。测试证明辅助脚本的行为，不代替每台电脑的实际联网验收。

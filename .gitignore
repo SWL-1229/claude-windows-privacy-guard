@@ -30,3 +30,10 @@ installation-allowlist.json
 browser-profiles/
 environment-leases/
 core/
+# Local design captures and machine-only dashboard evidence are never public.
+detector/.impeccable/
+detector/DESIGN.md
+detector/PRODUCT.md
+detector/*验收*.json
+detector/*报告*.json
+*.lnk
