@@ -101,6 +101,7 @@ python -B -X utf8 detector/install_shortcut.py
 
 ## 本版兼容改进
 
+- Skill 1.2.0 增加实时面板工作流与状态排查，区分可视化面板、执行保护的监控器及实际泄露验收。GitHub 版与本机安装版使用同一份操作说明。
 - 识别新版 `%LOCALAPPDATA%\Claude-Data\claude_pzs8sxrjxfjjc`，与旧 MSIX 目录一起盘点；该布局已在 4.4212 系列实际核对。未知/自定义目录标记待检查，不自动扩大删除范围。
 - 定向移除已确认的 `config.json` OAuth 缓存、最近账户字段、本地设备登记与用量历史。只删 Cookie 可能仍保留登录状态。
 - 新增 `--all-discovered`，明确选择同时清理本次发现的新旧桌面目录；执行前预检全部所选根，清理后复查正常配置和登录字段。

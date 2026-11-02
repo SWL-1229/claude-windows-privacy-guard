@@ -1,4 +1,4 @@
 interface:
   display_name: "Claude 本地隐私与联网保护"
-  short_description: "按需检查出口 IP 防直连保护，定向清理桌面与浏览器登录痕迹"
-  default_prompt: "使用 $claude-windows-privacy-guard 检查本机 Claude 的联网保护或按我的指定范围清理本地登录痕迹。"
+  short_description: "查看 Claude 实时运行环境，检查固定出口保护或定向清理本地登录痕迹"
+  default_prompt: "使用 $claude-windows-privacy-guard 查看本机 Claude 安全环境的实时状态，或按我的指定范围检查保护、清理本地登录痕迹。"
