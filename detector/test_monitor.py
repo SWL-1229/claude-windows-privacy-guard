@@ -33,7 +33,9 @@ class LiveEvidenceTests(unittest.TestCase):
 
     def fixture(self, root, *, current=True, hold=False, runtime=True):
         live=monitor.LiveMonitor.__new__(monitor.LiveMonitor)
-        live.root=Path(root);live.leases=self.leases;live.watchdog=Mock()
+        # Hosted Windows TEMP can use an 8.3 alias; production rejects aliases.
+        # Canonicalize the fixture instead of loosening the production check.
+        live.root=Path(root).resolve();live.leases=self.leases;live.watchdog=Mock()
         live.roles={};live.events=[];live.last_signature=None;live.inventory_at=self.now;live.inventory_error=None
         live.unregistered_native=[]
         live.identities={'gate':self.target};live.guard_sha='fixed-sha';live.nrpt=True;live.aux_at=self.now;live.wfp=None
