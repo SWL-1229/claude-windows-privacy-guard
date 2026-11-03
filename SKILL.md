@@ -2,7 +2,7 @@
 name: claude-windows-privacy-guard
 description: 在 Windows 上查看 Claude 安全环境实时面板，检查或维护指定出口 IP 断网保护，或按授权清理 Claude/Anthropic 本地登录痕迹。适用于运行状态可视化、保护排查和定向清理；不用于服务端账号删除、指纹伪造或网站教程制作。
 metadata:
-  version: "1.2.0"
+  version: "1.3.0"
 ---
 
 # Claude 本地隐私、出口保护与运行状态
@@ -15,6 +15,7 @@ metadata:
 - 清理本地 Claude 软件登录：读 [desktop-cleanup.md](references/desktop-cleanup.md)。保留用户配置与工作内容，删除经确认的登录存储并复查。
 - 清理 Chrome、Edge 或联想浏览器的相关登录：读 [browser-cleanup.md](references/browser-cleanup.md)。按域名和配置文件定向处理，不清其他站点。
 - 配置、修复、验证限定出口与断网保护：读 [exit-protection.md](references/exit-protection.md)。先发现实际安装与规则，再修复和实测。
+- 维护独立 Edge／Brave 网页入口、排查 WebRTC 出口不一致或原生隐私设置：读 [manual-browsers.md](references/manual-browsers.md)。识别实际入口模式，保留手动链路，分开报告策略与实测。
 - 更新后无法连接、普通入口启动失败、旧进程复用错误代理：读 [startup-prevention.md](references/startup-prevention.md)，先只读检查再修复。历史报告不能替代当前验证。
 - 查看已有优化环境的实时可视化、安装或维护面板：先读 [实时面板工作流](references/live-panel.md)，需要具体命令时读 [面板说明](detector/README.md)。面板只观察既有部署，不安装保护，不把它换成通用手动扫描器。
 
@@ -30,6 +31,7 @@ metadata:
    新版实际 `--user-data-dir` 与已发现目录对照；旧目录的零 Cookie 不代表新版已退出登录。配置文件中的已知 OAuth 缓存也需检查，不能只删 Cookies。
 6. 本地清理会要求重新登录，但不等于删除云端同步、服务端记录或硬件生成的指纹；不要宣称获得全新设备身份或保证不封号。不要替用户登录、发消息、购买或改账号安全信息。
 7. 面板与执行保护分开。关闭可视化面板不停止原保护；原监控器或网关退出才按原策略暂停联网。面板绿字只证明该行注明的策略或测量范围，不等于完成 DNS、ICE、WFP 全面实测。查询失败/过期显示待验证，不能伪装成服务退出或继续放行。
+8. 日常网页使用正常手动浏览器与官方隐私功能；不为隐藏自动化而伪造 WebDriver、设备指纹或人机验证结果。截图是阶段证据，不是本机当前证明；桌面、Edge、Brave 和云端任务分别验收。
 
 ## 完成标准
 

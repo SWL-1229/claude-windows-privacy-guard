@@ -1,0 +1,216 @@
+// Read-only audit of the operator installation's pinned WFP keys. x64 only.
+// No Add/Delete/Set/Transaction/Install/Remove API is declared or called.
+// Outputs comparisons, never raw AppID/SID blobs or arbitrary provider data.
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Text;
+using System.Web.Script.Serialization;
+
+internal static class DetailedWfpReadOnly {
+    const string Inventory = @"@@INVENTORY@@";
+    const string InventoryHash = "@@INVENTORY_HASH@@";
+    const string Package = "@@PACKAGE@@";
+    const string Family = "Claude_pzs8sxrjxfjjc";
+    const string AppRoot = @"@@APP_ROOT@@";
+    const int ExecutableCount = @@EXECUTABLE_COUNT@@;
+    static readonly Guid ProviderKey = new Guid("072c56c8-439b-434c-a899-bb4cc945fb3a");
+    static readonly Guid SubLayerKey = new Guid("6f9118a2-a061-4a24-8e9a-19df01e157c8");
+    static readonly Guid ConnectV4 = new Guid("c38d57d1-05a7-4c33-904f-7fbceee60e82");
+    static readonly Guid ConnectV6 = new Guid("4a72393b-319f-44bc-84c3-ba54dcb3b6b4");
+    static readonly Guid AppId = new Guid("d78e1e87-8644-4ea5-9437-d809ecefc971");
+    static readonly Guid PackageId = new Guid("71bc78fa-f17c-4997-a602-6abb261f351c");
+    static readonly Guid RemoteAddress = new Guid("b235ae9a-1d64-49b8-a44c-5ff3d9095045");
+    static readonly Guid RemotePort = new Guid("c35a604d-d22b-4e1a-91b4-68f674ee674b");
+    static readonly Guid Protocol = new Guid("3971ef2b-623e-4f9a-8cb1-6e79b806b9a7");
+    const uint Equal=0, NotEqual=10, Uint8=1, Uint16=2, Uint32=3, Blob=12, Sid=13;
+
+    [StructLayout(LayoutKind.Sequential)] struct DisplayData { public IntPtr name,description; }
+    [StructLayout(LayoutKind.Sequential)] struct ByteBlob { public uint size; public IntPtr data; }
+    [StructLayout(LayoutKind.Explicit,Size=8)] struct ValueUnion {
+        [FieldOffset(0)] public byte u8;
+        [FieldOffset(0)] public ushort u16;
+        [FieldOffset(0)] public uint u32;
+        [FieldOffset(0)] public IntPtr ptr;
+    }
+    [StructLayout(LayoutKind.Sequential)] struct Value { public uint type; public ValueUnion value; }
+    [StructLayout(LayoutKind.Sequential)] struct Condition { public Guid field; public uint match; public Value value; }
+    [StructLayout(LayoutKind.Sequential)] struct Action { public uint type; public Guid key; }
+    [StructLayout(LayoutKind.Explicit,Size=16)] struct Context {
+        [FieldOffset(0)] public ulong raw;
+        [FieldOffset(0)] public Guid key;
+    }
+    [StructLayout(LayoutKind.Sequential)] struct Filter {
+        public Guid key; public DisplayData display; public uint flags; public IntPtr provider;
+        public ByteBlob providerData; public Guid layer,sublayer; public Value weight;
+        public uint conditionCount; public IntPtr conditions; public Action action;
+        public Context context; public IntPtr reserved; public ulong id; public Value effectiveWeight;
+    }
+    [StructLayout(LayoutKind.Sequential)] struct Provider {
+        public Guid key; public DisplayData display; public uint flags; public ByteBlob data; public IntPtr service;
+    }
+    [StructLayout(LayoutKind.Sequential)] struct SubLayer {
+        public Guid key; public DisplayData display; public uint flags; public IntPtr provider;
+        public ByteBlob data; public ushort weight;
+    }
+    static class Native {
+        [DllImport("fwpuclnt.dll",ExactSpelling=true,CharSet=CharSet.Unicode)] internal static extern uint FwpmEngineOpen0(string server,uint auth,IntPtr identity,IntPtr session,out IntPtr engine);
+        [DllImport("fwpuclnt.dll",ExactSpelling=true)] internal static extern uint FwpmEngineClose0(IntPtr engine);
+        [DllImport("fwpuclnt.dll",ExactSpelling=true)] internal static extern uint FwpmFilterGetByKey0(IntPtr engine,ref Guid key,out IntPtr filter);
+        [DllImport("fwpuclnt.dll",ExactSpelling=true)] internal static extern uint FwpmProviderGetByKey0(IntPtr engine,ref Guid key,out IntPtr provider);
+        [DllImport("fwpuclnt.dll",ExactSpelling=true)] internal static extern uint FwpmSubLayerGetByKey0(IntPtr engine,ref Guid key,out IntPtr sublayer);
+        [DllImport("fwpuclnt.dll",ExactSpelling=true)] internal static extern uint FwpmGetAppIdFromFileName0([MarshalAs(UnmanagedType.LPWStr)]string file,out IntPtr appId);
+        [DllImport("fwpuclnt.dll",ExactSpelling=true)] internal static extern void FwpmFreeMemory0(ref IntPtr memory);
+        [DllImport("userenv.dll",ExactSpelling=true,CharSet=CharSet.Unicode)] internal static extern int DeriveAppContainerSidFromAppContainerName(string name,out IntPtr sid);
+        [DllImport("advapi32.dll",ExactSpelling=true)] internal static extern IntPtr FreeSid(IntPtr sid);
+        [DllImport("advapi32.dll",ExactSpelling=true)] [return:MarshalAs(UnmanagedType.Bool)] internal static extern bool IsValidSid(IntPtr sid);
+        [DllImport("advapi32.dll",ExactSpelling=true)] internal static extern uint GetLengthSid(IntPtr sid);
+    }
+    sealed class Scope : IDisposable {
+        public string key; public int index; public Guid field; public uint type; public IntPtr pointer; public bool sid;
+        public void Dispose(){if(pointer==IntPtr.Zero)return;if(sid)Native.FreeSid(pointer);else Native.FwpmFreeMemory0(ref pointer);pointer=IntPtr.Zero;}
+    }
+    static void Require(bool yes,string code){if(!yes)throw new InvalidOperationException(code);}
+    static void Check(uint rc,string code){if(rc!=0)throw new InvalidOperationException(code+"_0x"+rc.ToString("x8"));}
+    static void Layout(){
+        Require(IntPtr.Size==8,"x64_required");
+        Require(Marshal.SizeOf(typeof(ByteBlob))==16 && Marshal.SizeOf(typeof(Value))==16 && Marshal.SizeOf(typeof(Condition))==40 && Marshal.SizeOf(typeof(Filter))==200 && Marshal.SizeOf(typeof(Provider))==64 && Marshal.SizeOf(typeof(SubLayer))==72,"abi_size_invalid");
+        Require(Marshal.OffsetOf(typeof(Filter),"conditions").ToInt32()==120 && Marshal.OffsetOf(typeof(Filter),"action").ToInt32()==128 && Marshal.OffsetOf(typeof(Filter),"id").ToInt32()==176,"abi_offset_invalid");
+    }
+    static string Hash(string path){using(SHA256 sha=SHA256.Create())using(FileStream file=File.OpenRead(path))return BitConverter.ToString(sha.ComputeHash(file)).Replace("-","").ToLowerInvariant();}
+    static string Physical(string path){
+        string full=Path.GetFullPath(path);FileSystemInfo item=new FileInfo(full);
+        Require(item.Exists,"physical_file_missing");
+        while(item!=null){Require((item.Attributes&FileAttributes.ReparsePoint)==0,"reparse_path_denied");item=item is FileInfo?((FileInfo)item).Directory:((DirectoryInfo)item).Parent;}
+        return full;
+    }
+    static List<Scope> Scopes(){
+        Require(Physical(Inventory)==Inventory && Hash(Inventory)==InventoryHash,"inventory_pin_invalid");
+        Require(new FileInfo(Inventory).Length<=16384,"inventory_size_invalid");
+        Dictionary<string,object> root=(Dictionary<string,object>)new JavaScriptSerializer().DeserializeObject(File.ReadAllText(Inventory,Encoding.UTF8));
+        Require((string)root["package"]==Package && (string)root["family"]==Family,"inventory_package_invalid");
+        object[] rows=(object[])root["executables"];Require(rows.Length==ExecutableCount,"inventory_count_invalid");
+        List<Scope> scopes=new List<Scope>();HashSet<string> seen=new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        try{
+            foreach(object row in rows){
+                Dictionary<string,object> data=(Dictionary<string,object>)row;
+                string path=Physical((string)data["path"]);
+                Require(path.StartsWith(AppRoot+"\\",StringComparison.OrdinalIgnoreCase)&&Path.GetExtension(path).Equals(".exe",StringComparison.OrdinalIgnoreCase)&&seen.Add(path),"inventory_scope_invalid");
+                Require(Hash(path).Equals((string)data["sha256"],StringComparison.OrdinalIgnoreCase),"executable_hash_changed");
+                Scope scope=new Scope();scope.index=scopes.Count;scope.key="app:"+path.ToLowerInvariant();scope.field=AppId;scope.type=Blob;
+                Check(Native.FwpmGetAppIdFromFileName0(path,out scope.pointer),"derive_app_id");scopes.Add(scope);
+            }
+            Scope package=new Scope();package.index=ExecutableCount;package.key="package:"+Family;package.field=PackageId;package.type=Sid;package.sid=true;
+            int hr=Native.DeriveAppContainerSidFromAppContainerName(Family,out package.pointer);Require(hr>=0,"derive_package_sid_failed");scopes.Add(package);
+            return scopes;
+        }catch{foreach(Scope scope in scopes)scope.Dispose();throw;}
+    }
+    static Guid StableKey(string scope,string suffix){using(SHA256 sha=SHA256.Create()){byte[] value=sha.ComputeHash(Encoding.UTF8.GetBytes(ProviderKey.ToString("D")+"|"+scope+"|"+suffix));byte[] key=new byte[16];Array.Copy(value,key,16);return new Guid(key);}}
+    static byte[] BlobBytes(IntPtr pointer){
+        Require(pointer!=IntPtr.Zero,"blob_pointer_invalid");ByteBlob blob=(ByteBlob)Marshal.PtrToStructure(pointer,typeof(ByteBlob));
+        Require(blob.size>0&&blob.size<=32768&&blob.data!=IntPtr.Zero,"blob_size_invalid");byte[] bytes=new byte[(int)blob.size];Marshal.Copy(blob.data,bytes,0,bytes.Length);return bytes;
+    }
+    static byte[] SidBytes(IntPtr pointer){
+        Require(pointer!=IntPtr.Zero&&Native.IsValidSid(pointer),"sid_invalid");uint count=Native.GetLengthSid(pointer);Require(count>=8&&count<=68,"sid_size_invalid");byte[] bytes=new byte[(int)count];Marshal.Copy(pointer,bytes,0,bytes.Length);return bytes;
+    }
+    static bool Same(byte[] left,byte[] right){if(left.Length!=right.Length)return false;for(int i=0;i<left.Length;i++)if(left[i]!=right[i])return false;return true;}
+    static bool Identity(Condition value,Scope expected){
+        if(value.field!=expected.field||value.match!=Equal||value.value.type!=expected.type)return false;
+        return Same(expected.sid?SidBytes(value.value.value.ptr):BlobBytes(value.value.value.ptr),expected.sid?SidBytes(expected.pointer):BlobBytes(expected.pointer));
+    }
+    static bool Forbidden(Condition value,string suffix){
+        if(value.match!=NotEqual)return false;
+        if(suffix=="v4-address-not-gateway")return value.field==RemoteAddress&&value.value.type==Uint32&&value.value.value.u32==0x7f000001;
+        if(suffix=="v4-port-not-gateway")return value.field==RemotePort&&value.value.type==Uint16&&value.value.value.u16==17894;
+        if(suffix=="v4-protocol-not-tcp")return value.field==Protocol&&value.value.type==Uint8&&value.value.value.u8==6;
+        return false;
+    }
+    static Dictionary<string,object> AuditFilter(IntPtr engine,Scope scope,string suffix){
+        Guid key=StableKey(scope.key,suffix);IntPtr memory=IntPtr.Zero;bool v6=suffix=="v6-block-all";
+        try{
+            Check(Native.FwpmFilterGetByKey0(engine,ref key,out memory),"filter_get");Require(memory!=IntPtr.Zero,"filter_null");
+            Filter filter=(Filter)Marshal.PtrToStructure(memory,typeof(Filter));
+            bool header=filter.key==key&&filter.provider!=IntPtr.Zero&&(Guid)Marshal.PtrToStructure(filter.provider,typeof(Guid))==ProviderKey&&filter.sublayer==SubLayerKey&&filter.layer==(v6?ConnectV6:ConnectV4)&&(filter.flags&1)!=0&&(filter.flags&0x20)==0&&filter.action.type==0x1001;
+            bool count=filter.conditionCount==(v6?1:2)&&filter.conditions!=IntPtr.Zero;
+            bool identity=false,forbidden=v6;int identityCount=0,forbiddenCount=0;
+            if(count){for(int i=0;i<(int)filter.conditionCount;i++){
+                Condition value=(Condition)Marshal.PtrToStructure(IntPtr.Add(filter.conditions,i*40),typeof(Condition));
+                if(Identity(value,scope)){identity=true;identityCount++;}
+                else if(!v6&&Forbidden(value,suffix)){forbidden=true;forbiddenCount++;}
+            }}
+            bool exact=count&&identityCount==1&&(v6?forbiddenCount==0:forbiddenCount==1);
+            Dictionary<string,object> row=new Dictionary<string,object>();row["scope_index"]=scope.index;row["scope_kind"]=scope.sid?"package_sid":"executable_app_id";row["rule"]=suffix;row["key"]=key;row["id"]=filter.id;
+            row["header_matches"]=header;row["condition_count_matches"]=count;row["actual_identity_matches_windows_derived"]=identity;row["actual_forbidden_property_matches"]=forbidden;row["exact_conditions_match"]=exact;row["verified"]=header&&exact;
+            return row;
+        }finally{if(memory!=IntPtr.Zero)Native.FwpmFreeMemory0(ref memory);}
+    }
+    static bool ProviderAndSubLayer(IntPtr engine){
+        Guid providerKey=ProviderKey,subLayerKey=SubLayerKey;IntPtr p=IntPtr.Zero,s=IntPtr.Zero;
+        try{
+            Check(Native.FwpmProviderGetByKey0(engine,ref providerKey,out p),"provider_get");
+            Check(Native.FwpmSubLayerGetByKey0(engine,ref subLayerKey,out s),"sublayer_get");
+            Provider provider=(Provider)Marshal.PtrToStructure(p,typeof(Provider));SubLayer sublayer=(SubLayer)Marshal.PtrToStructure(s,typeof(SubLayer));
+            return provider.key==ProviderKey&&(provider.flags&1)!=0&&(provider.flags&0x10)==0&&Marshal.PtrToStringUni(provider.service)=="BFE"&&sublayer.key==SubLayerKey&&(sublayer.flags&1)!=0&&sublayer.provider!=IntPtr.Zero&&(Guid)Marshal.PtrToStructure(sublayer.provider,typeof(Guid))==ProviderKey;
+        }finally{if(p!=IntPtr.Zero)Native.FwpmFreeMemory0(ref p);if(s!=IntPtr.Zero)Native.FwpmFreeMemory0(ref s);}
+    }
+    static void Print(object value){string text=new JavaScriptSerializer().Serialize(value);Require(Encoding.UTF8.GetByteCount(text)<=32768,"output_size_invalid");Console.WriteLine(text);}
+    static Condition Numeric(Guid field,uint match,uint type,uint value){Condition c=new Condition();c.field=field;c.match=match;c.value.type=type;c.value.value.u32=value;return c;}
+    static IntPtr SyntheticBlob(byte[] bytes,List<IntPtr> allocations){
+        IntPtr data=Marshal.AllocHGlobal(bytes.Length);allocations.Add(data);Marshal.Copy(bytes,0,data,bytes.Length);
+        ByteBlob blob=new ByteBlob();blob.size=(uint)bytes.Length;blob.data=data;
+        IntPtr pointer=Marshal.AllocHGlobal(16);allocations.Add(pointer);Marshal.StructureToPtr(blob,pointer,false);return pointer;
+    }
+    static int IdentitySelfTests(){
+        List<IntPtr> allocations=new List<IntPtr>();int checks=0;
+        try{
+            Scope app=new Scope();app.field=AppId;app.type=Blob;app.pointer=SyntheticBlob(new byte[]{65,0,66,0},allocations);
+            Condition condition=new Condition();condition.field=AppId;condition.match=Equal;condition.value.type=Blob;condition.value.value.ptr=SyntheticBlob(new byte[]{65,0,66,0},allocations);
+            Require(Identity(condition,app),"app_blob_positive");checks++;
+            condition.value.value.ptr=SyntheticBlob(new byte[]{65,0,67,0},allocations);Require(!Identity(condition,app),"app_blob_value_negative");checks++;
+            condition.value.value.ptr=app.pointer;condition.match=NotEqual;Require(!Identity(condition,app),"app_blob_match_negative");checks++;
+            condition.match=Equal;condition.field=PackageId;Require(!Identity(condition,app),"app_blob_field_negative");checks++;
+            condition.field=AppId;condition.value.type=Sid;Require(!Identity(condition,app),"app_blob_type_negative");checks++;
+            Scope sid=new Scope();sid.field=PackageId;sid.type=Sid;sid.sid=true;
+            byte[] originalSid=new byte[]{1,1,0,0,0,0,0,5,32,0,0,0};
+            sid.pointer=Marshal.AllocHGlobal(originalSid.Length);allocations.Add(sid.pointer);Marshal.Copy(originalSid,0,sid.pointer,originalSid.Length);
+            IntPtr second=Marshal.AllocHGlobal(originalSid.Length);allocations.Add(second);Marshal.Copy(originalSid,0,second,originalSid.Length);
+            condition.field=PackageId;condition.match=Equal;condition.value.type=Sid;condition.value.value.ptr=second;
+            Require(Identity(condition,sid),"sid_positive");checks++;
+            Marshal.WriteByte(second,8,33);Require(!Identity(condition,sid),"sid_value_negative");checks++;
+            condition.value.type=Blob;Require(!Identity(condition,sid),"sid_type_negative");checks++;
+            return checks;
+        }finally{foreach(IntPtr pointer in allocations)Marshal.FreeHGlobal(pointer);}
+    }
+    static int SelfTest(){
+        Layout();int checks=0;
+        Require(Forbidden(Numeric(RemoteAddress,NotEqual,Uint32,0x7f000001),"v4-address-not-gateway"),"address_positive");checks++;
+        Require(!Forbidden(Numeric(RemoteAddress,Equal,Uint32,0x7f000001),"v4-address-not-gateway"),"address_match_negative");checks++;
+        Require(!Forbidden(Numeric(RemoteAddress,NotEqual,Uint32,0x7f000002),"v4-address-not-gateway"),"address_value_negative");checks++;
+        Require(Forbidden(Numeric(RemotePort,NotEqual,Uint16,17894),"v4-port-not-gateway"),"port_positive");checks++;
+        Require(!Forbidden(Numeric(RemotePort,NotEqual,Uint16,17895),"v4-port-not-gateway"),"port_negative");checks++;
+        Require(Forbidden(Numeric(Protocol,NotEqual,Uint8,6),"v4-protocol-not-tcp"),"protocol_positive");checks++;
+        Require(!Forbidden(Numeric(Protocol,NotEqual,Uint8,17),"v4-protocol-not-tcp"),"protocol_negative");checks++;
+        Require(!Same(new byte[]{1,2},new byte[]{1,3})&&!Same(new byte[]{1},new byte[]{1,0})&&Same(new byte[]{1,2},new byte[]{1,2}),"blob_comparison");checks++;
+        HashSet<string> allowed=new HashSet<string>(new string[]{"FwpmEngineOpen0","FwpmEngineClose0","FwpmFilterGetByKey0","FwpmProviderGetByKey0","FwpmSubLayerGetByKey0","FwpmGetAppIdFromFileName0","FwpmFreeMemory0","DeriveAppContainerSidFromAppContainerName","FreeSid","IsValidSid","GetLengthSid"});
+        foreach(MethodInfo method in typeof(Native).GetMethods(BindingFlags.Static|BindingFlags.NonPublic)){Require(allowed.Remove(method.Name),"unreviewed_native_api");}Require(allowed.Count==0,"native_api_set_changed");checks++;
+        checks+=IdentitySelfTests();
+        Print(new{schema=1,read_only=true,self_test=true,passed=true,checks=checks,wfp_engine_opened=false});return 0;
+    }
+    static int Main(string[] args){
+        IntPtr engine=IntPtr.Zero;List<Scope> scopes=null;
+        try{
+            Layout();if(args.Length==1&&args[0]=="--self-test")return SelfTest();Require(args.Length==0,"arguments_not_allowed");
+            scopes=Scopes();Check(Native.FwpmEngineOpen0(null,10,IntPtr.Zero,IntPtr.Zero,out engine),"engine_open");
+            bool provider=ProviderAndSubLayer(engine),passed=provider;List<object> rows=new List<object>();
+            foreach(Scope scope in scopes)foreach(string suffix in new string[]{"v4-address-not-gateway","v4-port-not-gateway","v4-protocol-not-tcp","v6-block-all"}){Dictionary<string,object> row=AuditFilter(engine,scope,suffix);rows.Add(row);passed=passed&&(bool)row["verified"];}
+            Print(new{schema=1,read_only=true,settings_mutated=false,at_utc=DateTime.UtcNow.ToString("o"),inventory_pin_verified=true,only_expected_provider_queried=true,provider_sublayer_verified=provider,expected_filters=(ExecutableCount+1)*4,verified=passed,conditions=rows,raw_identity_blobs_exported=false,packet_enforcement_tested=false});return passed?0:2;
+        }catch(Exception error){
+            string code=error is InvalidOperationException?error.Message:"audit_operation_failed";
+            if(code.Length>100||code.IndexOfAny(new char[]{'\\','/','\r','\n'})>=0)code="audit_operation_failed";
+            Print(new{schema=1,read_only=true,settings_mutated=false,verified=false,error_class=error.GetType().Name,error_code=code,raw_identity_blobs_exported=false});return 2;
+        }finally{if(engine!=IntPtr.Zero)Native.FwpmEngineClose0(engine);if(scopes!=null)foreach(Scope scope in scopes)scope.Dispose();}
+    }
+}

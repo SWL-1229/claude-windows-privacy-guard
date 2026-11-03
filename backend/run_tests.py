@@ -3,6 +3,7 @@ from pathlib import Path
 import subprocess,sys
 HERE=Path(__file__).resolve().parent
 commands=[
+    [sys.executable,'-B','-m','unittest','discover','-s',str(HERE/'source'),'-p','test_*.py'],
     [sys.executable,'-B','-m','unittest','discover','-s',str(HERE/'tests'),'-p','test_*.py'],
     [sys.executable,'-B','-m','unittest','discover','-s',str(HERE/'source/native-launcher'),'-p','test_*.py'],
     [sys.executable,'-B','-m','unittest','discover','-s',str(HERE/'source/privacy-qa'),'-p','test_status_publisher.py'],

@@ -20,6 +20,16 @@ POLICY = 'disable_non_proxied_udp'
 FIELDS = {'schema','kind','pid','creation','nonce','sourceSha256','ok','policy',
           'webContents','listenerAttached','failures','writes','writeFailures','epoch'}
 
+def bound_runtime_script(script_bytes, root, leases):
+    """Bind the sole output literal to this physical deployment, not an author path."""
+    folder=leases.physical(Path(root)/'native-launcher',root)
+    output=leases.physical(folder/'native-rtc-runtime.json',root,missing=True)
+    text=script_bytes.decode('utf-8','strict')
+    token='__CLAUDE_GUARD_RTC_OUTPUT__'
+    if text.count(token)!=1:raise ValueError('native_rtc_output_template_invalid')
+    return text.replace(token,json.dumps(str(output),ensure_ascii=True)),str(output)
+
+
 def pins(root, leases):
     folder=Path(root)/'native-launcher'
     manifest=leases.read_json(folder/'native-rtc-manifest.json',root)
@@ -194,10 +204,10 @@ def _install(root,target,nonce,leases,owner_check):
         script_bytes=(Path(root)/'native-launcher/native_rtc_runtime.js').read_bytes()
         if hashlib.sha256(script_bytes).hexdigest()!=manifest['runtime_sha256']:
             raise ValueError('native_rtc_source_changed')
-        script=script_bytes.decode('utf-8','strict')
+        script,output=bound_runtime_script(script_bytes,root,leases)
         config={'pid':target['pid'],'creation':target['creation'],'nonce':nonce,
                 'sourceSha256':manifest['runtime_sha256'],
-                'output':str(Path(root)/'native-launcher/native-rtc-runtime.json')}
+                'output':output}
         value=client.evaluate(script+'('+json.dumps(config,separators=(',',':'))+')')
         validate_value(value,target,nonce,manifest['runtime_sha256'],time.time())
         return value

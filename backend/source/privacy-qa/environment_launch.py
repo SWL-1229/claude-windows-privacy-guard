@@ -708,7 +708,7 @@ def _keep_protected_timeout_error(root, proc, status_path, started, kind, origin
                         'process_pid': after['process_pid'], 'status_path': str(status_path),
                         'retained_identity': {'process_creation': again[0]['creation'],
                                               'controller_creation': again[1]['creation']},
-                        'environment_monitor': original_monitor, 'timezone': 'America/New_York', 'locale': 'en-US',
+                        'environment_monitor': original_monitor, 'timezone': 'America/Denver', 'locale': 'en-US',
                         'document_evidence': {'document_loaded': False, 'activation_completed': False,
                             'window_preserved': True, 'startup_error': 'cdp_command_timeout',
                             'current_error_document_verified': True, 'checked_at': qa['checked_at']},
@@ -776,7 +776,7 @@ def launch_environment(kind, exe, argv, env, root, *, verification_mode=None):
     token = 'environment-launch-' + uuid.uuid4().hex + '\n'
     config_path = runs / ('launch-' + uuid.uuid4().hex + '.json')
     config = {'schema_version': 1, 'kind': kind, 'exe': str(exe), 'args': list(argv),
-              'domains': list(DOMAINS), 'timezone': 'America/New_York', 'locale': 'en_US'}
+              'domains': list(DOMAINS), 'timezone': 'America/Denver', 'locale': 'en_US'}
     if verification_mode is not None:
         config['verification_mode'] = verification_mode
     proc = None
@@ -853,7 +853,7 @@ def launch_environment(kind, exe, argv, env, root, *, verification_mode=None):
                     return {'outcome': 'native-policy-ready', 'verification_mode': verification_mode,
                             'controller_pid': proc.pid, 'process_pid': report['process_pid'],
                             'status_path': str(status_path), 'environment_monitor': monitor,
-                            'timezone': 'America/New_York', 'locale': 'en-US',
+                            'timezone': 'America/Denver', 'locale': 'en-US',
                             'environment_evidence': observation['reason'],
                             'document_evidence': {'document_loaded': None,
                                 'navigation_dispatched': True, 'scope': 'policy-readiness-only'},
@@ -865,7 +865,7 @@ def launch_environment(kind, exe, argv, env, root, *, verification_mode=None):
                 return {'outcome': 'activated', 'controller_pid': proc.pid,
                         'process_pid': report['process_pid'], 'status_path': str(status_path),
                         'environment_monitor': environment_monitor,
-                        'timezone': 'America/New_York', 'locale': 'en-US',
+                        'timezone': 'America/Denver', 'locale': 'en-US',
                         'warnings': list(report.get('error_codes', [])),
                         'limits': ['Private environment metadata verified; not a per-packet egress proof.']}
             if _real_failure(report):

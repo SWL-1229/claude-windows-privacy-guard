@@ -29,7 +29,7 @@ class BrowserServicePreflightTests(unittest.TestCase):
         for name in ('node.exe','msedge.exe'):(self.root/name).write_text('fixture; never executable')
         (self.root/'environment-runtime.json').write_text(json.dumps({'node_executable':str(self.root/'node.exe'),'browser_executable':str(self.root/'msedge.exe')}))
 
-    def test_main_starts_services_before_follower_and_browser(self):
+    def test_legacy_main_starts_services_before_follower_and_browser(self):
         self.runtime();events=[]
         with patch.object(m,'ROOT',self.root),patch.dict(os.environ),patch.object(sys,'argv',['browser.py','--console']),\
              patch.object(m,'ensure_shared_services',side_effect=lambda root:events.append('services')),\
@@ -38,15 +38,15 @@ class BrowserServicePreflightTests(unittest.TestCase):
              patch.object(m,'existing_environment',return_value=None),\
              patch.object(m,'launch_environment',side_effect=lambda *a,**k:events.append('browser') or {'outcome':'fixture'}),\
              contextlib.redirect_stdout(io.StringIO()):
-            m.main()
+            m.legacy_main()
         self.assertEqual(events,['services','follower','environment','browser'])
 
-    def test_main_service_failure_does_not_launch_or_clear_a_hold(self):
+    def test_legacy_main_service_failure_does_not_launch_or_clear_a_hold(self):
         self.runtime();(self.root/'hold.block').write_text('user-owned-lock')
         with patch.object(m,'ROOT',self.root),patch.dict(os.environ),\
              patch.object(m,'ensure_shared_services',side_effect=m.LaunchFailure('shared_services_not_ready')),\
              patch.object(m,'ensure_ingress_follower') as follow,patch.object(m,'launch_environment') as launch:
-            with self.assertRaises(m.LaunchFailure):m.main()
+            with self.assertRaises(m.LaunchFailure):m.legacy_main()
         follow.assert_not_called();launch.assert_not_called()
         self.assertEqual((self.root/'hold.block').read_text(),'user-owned-lock')
 

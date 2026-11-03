@@ -1,50 +1,57 @@
 {
   "schema": 1,
-  "snapshot_date": "2026-10-31",
+  "snapshot_date": "2026-11-02",
   "origin": "Maintained local source snapshot; no profiles, credentials, binaries or historical reports.",
   "status": "experimental_portable_source_snapshot",
   "live_installation_modified": false,
   "files": [
     {
       "path": "guard.py",
-      "upstream_sha256": "650b29ba619a04322b3b5be8b52a252f60846b7c92d2372811e69e77884839a7",
-      "published_sha256": "7786414fb0631a26dfce3fa4e7032bb6790088bc03c4775a4e5f8a439cc8bb6f",
+      "upstream_sha256": "084743257a59787291483422f2413ad84d028dbfd8555953cb26c4699382482e",
+      "published_sha256": "00f02e7c55a1326b447ef84e8d01617b8a14b0cfe3f534f46628cb1d702a4dce",
       "changes": [
-        "Installation-local allowlist ceiling; distributed default empty"
+        "Denver timezone and manual Edge/Brave process-policy support; author network identifiers replaced by installation-local empty allowlist where applicable"
       ]
     },
     {
       "path": "environment_lease.py",
-      "upstream_sha256": "97666e08bb314921755c0e05c1c551742148152cd92c72e1f030f52f4aec8232",
-      "published_sha256": "686084858f3eaf16fb07a57e2ab379e5779a2508a75a6be8bcf18e2b5d08c579",
-      "changes": []
+      "upstream_sha256": "249e753e0edbb65b95a054d51175b9b67b0a658a52d6e64af3867fe99651ef17",
+      "published_sha256": "7bc41a2c5f5d05553530d904a512b25913f34831379dfa14b77b5868a0db8968",
+      "changes": [
+        "Denver timezone and manual Edge/Brave process-policy support; author network identifiers replaced by installation-local empty allowlist where applicable",
+        "Synchronize Denver seasonal offsets and offline fixtures in retained compatibility paths"
+      ]
     },
     {
       "path": "environment_watchdog.py",
-      "upstream_sha256": "847a0b374ea32a9274e6e36e8e5ea075b25fcaa0c8122dce332e756a5788593b",
-      "published_sha256": "86f436ead695a496f6711b850ba9d473141d77301136541e2e20e2715eb0a9b4",
-      "changes": []
+      "upstream_sha256": "401f523c2f11cc26d92ca255ebbd0e634708453a81a636fcb0c1b38266e4574d",
+      "published_sha256": "efbb58709fb942544fca9ea514b5fe9fb749f3b7e2ccc618ff9a68d160492785",
+      "changes": [
+        "Denver timezone and manual Edge/Brave process-policy support; author network identifiers replaced by installation-local empty allowlist where applicable"
+      ]
     },
     {
       "path": "browser_system_timezone.py",
-      "upstream_sha256": "d4011e4d79123222494a99d1cc6f4ed11f9a193275b7cf32b292943673a69685",
-      "published_sha256": "d4011e4d79123222494a99d1cc6f4ed11f9a193275b7cf32b292943673a69685",
-      "changes": []
+      "upstream_sha256": "80fb43df3bb03a8edbd66b5fd03a1917547db50339013b380ebf40a539c27baf",
+      "published_sha256": "b98a8674bde3f1c1c80d1b57ad557146f25b27ea8d5fd730fbcabe875081ea4c",
+      "changes": [
+        "Denver timezone and manual Edge/Brave process-policy support; author network identifiers replaced by installation-local empty allowlist where applicable"
+      ]
     },
     {
       "path": "claude_browser_launch.py",
-      "upstream_sha256": "2fa931df7a51b14c989bf562a4443a14259015dcd0004dc07e9c1c7c43533142",
-      "published_sha256": "29fec553c53d64527fcd8383b7ba11bf463ca0702a89f5eedf9c44329331d8ad",
+      "upstream_sha256": "eaa9245783dd8caddb2acf24d4d5fda38673602b16f3c8453f463896d1d47041",
+      "published_sha256": "759ffbc561b2aadf9a4c9db7ad652aeb163d276e928f427c0d1b6d02f2b382ca",
       "changes": [
-        "Browser startup now starts/verifies existing owned services before waiting for ingress; no policy relaxation"
+        "Denver timezone and manual Edge/Brave process-policy support; author network identifiers replaced by installation-local empty allowlist where applicable"
       ]
     },
     {
       "path": "ingress_follow.py",
-      "upstream_sha256": "769c9efdc98c9397f5f0e174c616793b6f075c2c055ae9f3ae317d8f2e59de15",
-      "published_sha256": "1e0f9717b35e05f3c5dd927a4a968028c075e3ed7a1b284ed1c029fa98226372",
+      "upstream_sha256": "c0e1b7a99dbc6b231ce3bf9a71607456f0646ab77e63ca2b9b6637b5c5c1ffb1",
+      "published_sha256": "c3b654604d65570eb0bd530cc560ff1e2ce40aafa3a2b182f6d70feeea65f81e",
       "changes": [
-        "Physical source root and installation-local residential endpoint"
+        "Denver timezone and manual Edge/Brave process-policy support; author network identifiers replaced by installation-local empty allowlist where applicable"
       ]
     },
     {
@@ -75,21 +82,27 @@
     },
     {
       "path": "native-launcher/native_desktop_launch.py",
-      "upstream_sha256": "a24d617ab9efef735b7decaab75e42b7445fe1815262e9b5bdb8d2ed8bf7ad0a",
-      "published_sha256": "3b6d4dd9003f30da17a89712548a146c1be87f3a815d9c8c97fd9ae52e9c5c05",
-      "changes": []
+      "upstream_sha256": "1198f8b35aa4e448b7cc818ff0a4b6611b32eeafc064fff992c50226429e81d2",
+      "published_sha256": "5bd4aa838378b4740b8abf8208048cb12d6bc4303e5c5ce706ed9baa4e6fe6f8",
+      "changes": [
+        "Denver timezone and manual Edge/Brave process-policy support; author network identifiers replaced by installation-local empty allowlist where applicable"
+      ]
     },
     {
       "path": "native-launcher/native_rtc_policy.py",
       "upstream_sha256": "fa7fb161927a3f54513477338dddc00fa11c1ede7c23b3cc7110c7273fd25068",
-      "published_sha256": "72f9f0f86cef6b425856d680ae57fac1372d2b67ef769a83c1b57e08e8c6a7bc",
-      "changes": []
+      "published_sha256": "3e87341a6b61ae4b10cac4d8ebbce80ee1b5ff96320f92a3f34225ee136ac5f8",
+      "changes": [
+        "Bind RTC output to validated local deployment; remove author-only path"
+      ]
     },
     {
       "path": "native-launcher/native_rtc_runtime.js",
       "upstream_sha256": "c6e1b9859947674e977f7a0b1544605671d67ae1049856d07ce84dba0febac72",
-      "published_sha256": "c2ecce74945b25e5894df8522b3472d835181ba760eda65b42b074df3bdabaa9",
-      "changes": []
+      "published_sha256": "7634955a6838a85f459774c61cdc2eb10db80147487d63f9e8962f875baace18",
+      "changes": [
+        "Bind RTC output to validated local deployment; remove author-only path"
+      ]
     },
     {
       "path": "native-launcher/foreground_gui.py",
@@ -99,8 +112,8 @@
     },
     {
       "path": "native-launcher/DevToolsUi.cs",
-      "upstream_sha256": "c6556c1980710a09c1d92722ba54ed8b0c1996c4b68a19b69b945a8da421f6dc",
-      "published_sha256": "878597111d321b5ea78d51f530d424a7bd08e5de5221fc2f29b027efb3ab2f11",
+      "upstream_sha256": "be8260067ddd0ddd683cbf5aa068da43f0738783438099654847ed8d3a54ebd2",
+      "published_sha256": "406ea5772d7e926c7e70aa2af771b35c6fc26c4abee400e0a39c1ebbbe48a2fc",
       "changes": [
         "No personal public-IP RTC exceptions; raw public candidates outside policy"
       ]
@@ -137,10 +150,10 @@
     },
     {
       "path": "privacy-qa/environment_launch.py",
-      "upstream_sha256": "3373d074ca6a549c694e2fb6280fa97f387c5da53ce05960f460e28f52937870",
-      "published_sha256": "597195e07b51165c238b2d4d9ae899dbd3180fec71d0ceff087e0407170ec3e7",
+      "upstream_sha256": "5c3d3a49d9fdb67253c035d82a93c42b822a2c84e9b99f0ca9f5bfd74b82cc93",
+      "published_sha256": "4dde6ba4690d8ee858b40c76438047abe76a35ef2392b37ea06caab0ce61216e",
       "changes": [
-        "Installation-local allowlist ceiling"
+        "Denver timezone and manual Edge/Brave process-policy support; author network identifiers replaced by installation-local empty allowlist where applicable"
       ]
     },
     {
@@ -152,8 +165,10 @@
     {
       "path": "privacy-qa/status_publisher.py",
       "upstream_sha256": "524a47a52a907739fc6379016c8d229c0d84a2bd0e32d4a5ef7e4c3f26ab5092",
-      "published_sha256": "9a700da35c47c392c7471824b42e4c660345092da3901a420b0a1aa67774cfed",
-      "changes": []
+      "published_sha256": "6ff08217eb9ec9299e3f0f708f1bc36a5402c955c25437b277227181722512cd",
+      "changes": [
+        "Synchronize Denver seasonal offsets and offline fixtures in retained compatibility paths"
+      ]
     },
     {
       "path": "privacy-qa/status_publisher.mjs",
@@ -163,17 +178,21 @@
     },
     {
       "path": "privacy-qa/claude_environment_controller.mjs",
-      "upstream_sha256": "2847e257c7d17d77ac0fadf49699957b671779baa19f9e6c2571a7e254b5b695",
-      "published_sha256": "0c7ef604ca582bcd22a9af3562bffb23166f6661815df1b0b5d76bc81446d116",
-      "changes": []
+      "upstream_sha256": "9b3236eb0a01c03406b63e6d5c8710f19f7f04a1b77ba6d659b6859ef358e26c",
+      "published_sha256": "e2564ee6f4d4558d57d41f065140974b36ca70dd4aa811066ba7d301cc284040",
+      "changes": [
+        "Denver timezone and manual Edge/Brave process-policy support; author network identifiers replaced by installation-local empty allowlist where applicable",
+        "Synchronize Denver seasonal offsets and offline fixtures in retained compatibility paths"
+      ]
     },
     {
       "path": "native-launcher/test_native_launch.py",
       "upstream_sha256": "381dac68e7a40d1a79375ce8b66beb1c400a47608559d59de1a167d4880d6255",
-      "published_sha256": "57f932f7d47da912865ac3a174c6694bf96a99ee0d1d745694190f5413acbc56",
+      "published_sha256": "5dc285ab0e888a8374ed79c521842ed0d3ef5b3ac8b26ce43f3284e1a2c831e0",
       "changes": [
         "Personal IP fixture replaced with documentation IP where applicable; offline fixtures only",
-        "Offline fixtures updated to current source contracts: native RTC proof, bounded held probes, native browser metadata and required language flags"
+        "Offline fixtures updated to current source contracts: native RTC proof, bounded held probes, native browser metadata and required language flags",
+        "Synchronize Denver seasonal offsets and offline fixtures in retained compatibility paths"
       ]
     },
     {
@@ -187,9 +206,10 @@
     {
       "path": "native-launcher/test_scoped_launch_environment.py",
       "upstream_sha256": "3d9a7f919bb1bf145f6392bc1852011d9b2f745504cc9f98c0989951f8d90a7d",
-      "published_sha256": "3d9a7f919bb1bf145f6392bc1852011d9b2f745504cc9f98c0989951f8d90a7d",
+      "published_sha256": "dc1716d42c9cab93f738d7c424b2246a8844c011f192074a5aab7f44b25d1889",
       "changes": [
-        "Personal IP fixture replaced with documentation IP where applicable; offline fixtures only"
+        "Personal IP fixture replaced with documentation IP where applicable; offline fixtures only",
+        "Synchronize Denver seasonal offsets and offline fixtures in retained compatibility paths"
       ]
     },
     {
@@ -211,11 +231,12 @@
     {
       "path": "privacy-qa/claude_environment_controller.test.mjs",
       "upstream_sha256": "22c6e727af3ef4f0e6ce50fc80bfc03e1d98428298f84c63643e79356e9b1e18",
-      "published_sha256": "fca898469dc4f54a9fdde95bf74a794c0aa67a94d384bad3390d4beb1697e4de",
+      "published_sha256": "5aeaf071c8067f09a3ddfcd33af1af3281d85f46bb2071c8e9617fc55a0fd6fc",
       "changes": [
         "Personal IP fixture replaced with documentation IP where applicable; offline fixtures only",
         "Offline fixtures updated to current source contracts: native RTC proof, bounded held probes, native browser metadata and required language flags",
-        "Canonicalize the disposable test temp directory on Windows short-path CI environments; production rejection unchanged"
+        "Canonicalize the disposable test temp directory on Windows short-path CI environments; production rejection unchanged",
+        "Synchronize Denver seasonal offsets and offline fixtures in retained compatibility paths"
       ]
     },
     {
@@ -229,9 +250,89 @@
     {
       "path": "privacy-qa/test_browser_service_preflight.py",
       "upstream_sha256": null,
-      "published_sha256": "0ab6b56473e945179d094cdcad8a6e1d6f10f3d098dcbf8a86b54963f05251f4",
+      "published_sha256": "fad1bb79236b1628a15817433f992f0bb68333d14775fd060572b5bc7825d65d",
       "changes": [
         "New offline service order and failure-closed fixtures; no user profile or live requests"
+      ]
+    },
+    {
+      "path": "manual_browser_launch.py",
+      "upstream_sha256": "13dfa1e8d4783ac49dcf839d3834c1065018daf5a42c97778f0628b7688ab101",
+      "published_sha256": "3b015bbf92cec1c07c70898eaf315e894bc7bbc0cef6540e4f5b507d6692e6d0",
+      "changes": [
+        "Denver timezone and manual Edge/Brave process-policy support; author network identifiers replaced by installation-local empty allowlist where applicable"
+      ]
+    },
+    {
+      "path": "manual_browser_policy.py",
+      "upstream_sha256": "0a0cc6bc65a6e7e16fb9337752e77e88b5b13511aa9878a0405285cc4d6f4b3a",
+      "published_sha256": "0a0cc6bc65a6e7e16fb9337752e77e88b5b13511aa9878a0405285cc4d6f4b3a",
+      "changes": [
+        "Denver timezone and manual Edge/Brave process-policy support; author network identifiers replaced by installation-local empty allowlist where applicable"
+      ]
+    },
+    {
+      "path": "claude_brave_launch.py",
+      "upstream_sha256": "2e4b46aa9e9d2251a1144aefdf30bdeaad1e592c2e421b534a8c07a287cd150e",
+      "published_sha256": "8ccddd97b9d7530ad0c9f5e0a588c2d041a7184e509b0328c4fc101c0ccb6752",
+      "changes": [
+        "Denver timezone and manual Edge/Brave process-policy support; author network identifiers replaced by installation-local empty allowlist where applicable"
+      ]
+    },
+    {
+      "path": "brave_browser_launch.py",
+      "upstream_sha256": "9951724ce6509d1e526c39b8d71dfc453a69ed657de9e78f243b0b6ed8faa52c",
+      "published_sha256": "5ee89096ac6c05c65abddf6ffeba59c83f5867313dc66425b3b07873df214099",
+      "changes": [
+        "Denver timezone and manual Edge/Brave process-policy support; author network identifiers replaced by installation-local empty allowlist where applicable"
+      ]
+    },
+    {
+      "path": "brave_browser_policy.py",
+      "upstream_sha256": "b8569fae1058208d1105616af3314992fabee80ead482fa2eae5ccb9e32b62c2",
+      "published_sha256": "7fdf063732cdabffdc57dfda2464c8aa16fba414d33b562efc79f9e530c51098",
+      "changes": [
+        "Denver timezone and manual Edge/Brave process-policy support; author network identifiers replaced by installation-local empty allowlist where applicable"
+      ]
+    },
+    {
+      "path": "test_manual_mode.py",
+      "upstream_sha256": null,
+      "published_sha256": "b44c9614917f5672a825ab47c52c83e9e8e37102e09297b9c2383c8bc5321f34",
+      "changes": [
+        "Portable offline fixture; no live installation required"
+      ]
+    },
+    {
+      "path": "test_host_denver.py",
+      "upstream_sha256": null,
+      "published_sha256": "3308a63a74b1578394d42730ad72173254554b57ef5ff06fc3744f75ed516ae8",
+      "changes": [
+        "Portable offline fixture; no live installation required"
+      ]
+    },
+    {
+      "path": "test_profile_pref.py",
+      "upstream_sha256": null,
+      "published_sha256": "3ff9f205f34a93df2cfbc4b6067fb03af0dbf4c88b98df0c378d5c9168dd5623",
+      "changes": [
+        "Portable offline fixture; no live installation required"
+      ]
+    },
+    {
+      "path": "test_brave_policy.py",
+      "upstream_sha256": null,
+      "published_sha256": "be545d1e051b88324df6f29d5f71685dcebb39301909ef81cb8cc905eccd8952",
+      "changes": [
+        "Portable offline privacy-policy fixtures"
+      ]
+    },
+    {
+      "path": "native-launcher/test_rtc_output_binding.py",
+      "upstream_sha256": null,
+      "published_sha256": "300b2b867f0a06cd6efd68f7f341ba644c2e7f9153cca8e3796b3a85b8d61d1f",
+      "changes": [
+        "Portable offline runtime-output binding fixture"
       ]
     }
   ]

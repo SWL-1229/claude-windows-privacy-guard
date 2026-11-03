@@ -26,7 +26,7 @@ ROOT = Path(__file__).resolve().parent
 MAIN = Path.home() / 'AppData/Roaming/io.github.clash-verge-rev.clash-verge-rev'
 KIND = 'claude-ingress-follow-v1'
 from deployment_allowlist import PRIMARY
-ENTRY_TYPES = {'vless', 'vmess', 'ss', 'trojan', 'hysteria2', 'tuic', 'socks5', 'http'}
+ENTRY_TYPES = {'vless', 'vmess', 'ss', 'trojan', 'hysteria2', 'tuic', 'socks5', 'http', 'anytls'}
 FINAL_KEYS = ('type', 'server', 'port', 'username', 'password', 'tls', 'skip-cert-verify', 'udp')
 MAX_BODY = 16 * 1024 * 1024
 
@@ -134,7 +134,7 @@ def validate_template(template):
     return final
 
 
-def select_ingress(template, main, live, mode):
+def select_ingress(template, main, live, mode, *, selection_group=None):
     final = validate_template(template)
     proxies = main.get('proxies', [])
     by = {p.get('name'): p for p in proxies if isinstance(p, dict)}
@@ -163,7 +163,24 @@ def select_ingress(template, main, live, mode):
             return result
         raise FollowError('main_selection_cycle')
 
-    if mode == 'global':
+    if mode not in ('global', 'rule'):
+        raise FollowError('main_direct_mode_rejected')
+    if selection_group is not None:
+        # Observe only the group the user explicitly chose for manual chaining.
+        # Never change main Clash selections or create/reconnect a GUI chain.
+        if (not isinstance(selection_group, str) or not selection_group.strip()
+                or len(selection_group) > 256 or any(c in selection_group for c in '\r\n')):
+            raise FollowError('manual_group_policy_invalid')
+        groups = [g for g in main.get('proxy-groups', [])
+                  if isinstance(g, dict) and g.get('name') == selection_group]
+        node = graph.get(selection_group)
+        if (len(groups) != 1 or groups[0].get('type') != 'select'
+                or not isinstance(node, dict) or node.get('type') != 'Selector'
+                or not isinstance(groups[0].get('proxies'), list)
+                or node.get('now') not in groups[0]['proxies']):
+            raise FollowError('manual_group_not_ready')
+        root = selection_group
+    elif mode == 'global':
         root = 'GLOBAL'
     elif mode == 'rule':
         roots = [str(r).split(',')[1] for r in main.get('rules', [])
@@ -179,13 +196,14 @@ def select_ingress(template, main, live, mode):
     live_final = graph[selected['name']]
     if (str(live_final.get('type')).lower() != 'socks5'
             or not isinstance(live_final.get('dialer-proxy'), str)
+            or not live_final['dialer-proxy']
             or live_final['dialer-proxy'] != selected.get('dialer-proxy')):
         raise FollowError('live_saved_chain_mismatch')
     entry = leaf(live_final['dialer-proxy'])
     live_entry = graph[entry['name']]
     type_aliases = {'ss': 'shadowsocks', 'http': 'http', 'socks5': 'socks5',
                     'vless': 'vless', 'vmess': 'vmess', 'trojan': 'trojan',
-                    'hysteria2': 'hysteria2', 'tuic': 'tuic'}
+                    'hysteria2': 'hysteria2', 'tuic': 'tuic', 'anytls': 'anytls'}
     if str(live_entry.get('type')).lower() != type_aliases.get(entry.get('type')):
         raise FollowError('live_saved_transit_type_mismatch')
     if (entry.get('type') not in ENTRY_TYPES or entry.get('dialer-proxy')
@@ -394,6 +412,25 @@ def probe_primary():
         raise FollowError('primary_exit_mismatch')
 
 
+
+def read_selection_group(root):
+    path = Path(root) / 'ingress-follow-policy.json'
+    physical_path(path)
+    if not path.exists():
+        return None  # Legacy installations retain their original route check.
+    if not 0 < path.stat().st_size <= 4096:
+        raise FollowError('manual_group_policy_invalid')
+    policy = read_mapping(path)
+    if (set(policy) != {'schema', 'mode', 'group'}
+            or type(policy.get('schema')) is not int or policy['schema'] != 1
+            or policy.get('mode') != 'manual-group'
+            or not isinstance(policy.get('group'), str)
+            or not policy['group'].strip() or len(policy['group']) > 256
+            or any(c in policy['group'] for c in '\r\n')):
+        raise FollowError('manual_group_policy_invalid')
+    return policy['group']
+
+
 class Follower:
     def __init__(self, root=ROOT, main_dir=MAIN, snapshot=get_main_snapshot,
                  request=core_request, probe=probe_primary, sleep=time.sleep):
@@ -406,10 +443,14 @@ class Follower:
         self.last_applied = digest(self.template['proxies'][0] | {'name': 'PINNED-ENTRY'})
         self.pending = None
         self.stable = 0
+        self.selection_group = read_selection_group(self.root)
 
     def selected(self):
+        if read_selection_group(self.root) != self.selection_group:
+            raise FollowError('selection_policy_changed_externally')
         source = self.snapshot(self.main_dir)
-        return select_ingress(self.template, source['main'], source['live'], source['mode'])
+        return select_ingress(self.template, source['main'], source['live'], source['mode'],
+                              selection_group=self.selection_group)
 
     def tick(self):
         try:

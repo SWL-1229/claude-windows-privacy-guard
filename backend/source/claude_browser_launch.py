@@ -304,7 +304,7 @@ def reuse_environment(existing, root=ROOT):
         return {'outcome':'reused-existing-session','verification_mode':mode,
                 'controller_pid':controller['pid'],'process_pid':target['pid'],
                 'status_path':existing['status_path'],'environment_monitor':monitor,
-                'timezone':'America/New_York','locale':'en-US',
+                'timezone':'America/Denver','locale':'en-US',
                 'environment_evidence':observation['reason'],
                 'document_evidence':{'document_loaded':None,'navigation_dispatched':False,
                                      'scope':'policy-readiness-only'},
@@ -339,7 +339,7 @@ def reuse_environment(existing, root=ROOT):
         raise LaunchFailure(str(error)) from None
     outcome={'outcome':'reused-existing-session','controller_pid':controller['pid'],
             'process_pid':target['pid'],'status_path':existing['status_path'],
-            'timezone':'America/New_York','locale':'en-US','environment_monitor':monitor,
+            'timezone':'America/Denver','locale':'en-US','environment_monitor':monitor,
             'environment_evidence':evidence,
             'document_evidence':document,
             'warnings':list(existing['report'].get('error_codes',[])),
@@ -383,7 +383,9 @@ def ensure_shared_services(root=ROOT, *, backend_factory=None):
             exec(compile(raw,str(source),'exec'),module.__dict__)
             backend_factory=module.WindowsBackend
         return backend_factory(root).ensure_services()
-    except Exception:
+    except Exception as error:
+        if getattr(error, 'code', None) == 'ingress_follower_not_ready':
+            raise LaunchFailure('ingress_follower_not_ready') from None
         raise LaunchFailure('shared_services_not_ready') from None
 
 
@@ -427,7 +429,7 @@ def launch_failure_message(error):
     elif error.code=='shared_services_not_ready':
         text='Claude 专用网关、核心或 DNS 服务未能就绪（shared_services_not_ready）。已尝试安全启动并核对进程身份；网络保护保留，没有改走其他出口。'
     elif error.code=='ingress_follower_not_ready':
-        text='Clash 入口节点跟随器尚未就绪（ingress_follower_not_ready）。这不代表家宽 IP 错误；请确认 Clash 已运行、链式入口为手动节点且住宅出口配置一致。网络保护保留。'
+        text='手动家宽链路尚未通过核验（ingress_follower_not_ready）。请在【Claude 手动链式（含家宽出口）】中手动连接入口与家宽出口；仅选中家宽、尚未连接链路时不会放行。网络保护保留。'
     if error.code=='existing_page_health_not_verified':
         text='当前 Claude 页面健康检查未通过。专用窗口、登录资料和网络保护均保留；请切换检查加载状态，稍后再点入口。没有重载或关闭现有工作。'
     if error.code=='existing_native_policy_not_verified':
@@ -437,7 +439,7 @@ def launch_failure_message(error):
     return text
 
 
-def main():
+def legacy_main():
     runtime_path=ROOT/'environment-runtime.json'
     if runtime_path.resolve(strict=True)!=runtime_path.absolute():
         raise RuntimeError('运行时路径被重定向，已停止。')
@@ -475,6 +477,11 @@ def main():
         print(json.dumps(outcome,ensure_ascii=False))
     elif outcome.get('outcome')=='protected_page_unavailable':
         message('网络环境与固定出口已核验，但 Claude 页面暂未加载。专用窗口和保护已保留，请在该窗口刷新；加载完成后可再次点击安全入口核验。')
+
+
+def main():
+    from manual_browser_launch import main as manual_main
+    return manual_main(ROOT)
 
 
 if __name__=='__main__':

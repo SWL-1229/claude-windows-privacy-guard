@@ -37,3 +37,11 @@ detector/PRODUCT.md
 detector/*验收*.json
 detector/*报告*.json
 *.lnk
+
+# Private browser/runtime and read-only audit bindings, generated per machine.
+brave-runtime.json
+ingress-follow-policy.json
+wfp-audit.json
+environment-runtime.json
+environment-enforcement.json
+maintenance/

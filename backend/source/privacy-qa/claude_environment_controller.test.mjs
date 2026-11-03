@@ -12,9 +12,9 @@ import {EnvironmentController,PrivatePipeTransport,parseJsonStrict,validateConfi
 const EXE=String.raw`C:\Program Files\Fixture\Claude.exe`;
 const ROOT=String.raw`C:\FixtureGuard`;
 const BASE_ARGS=['--proxy-server=http://127.0.0.1:17894','--proxy-bypass-list=<-loopback>','--disable-quic','--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1','--webrtc-ip-handling-policy=disable_non_proxied_udp','--lang=en-US','--accept-lang=en-US,en'];
-function config(kind='electron') {return {schema_version:1,kind,exe:EXE,args:[...BASE_ARGS,...(kind==='browser'?[String.raw`--user-data-dir=C:\FixtureGuard\privacy-qa\runs\new-profile`]:[])],domains:['claude.ai','anthropic.com'],timezone:'America/New_York',locale:'en_US'};}
+function config(kind='electron') {return {schema_version:1,kind,exe:EXE,args:[...BASE_ARGS,...(kind==='browser'?[String.raw`--user-data-dir=C:\FixtureGuard\privacy-qa\runs\new-profile`]:[])],domains:['claude.ai','anthropic.com'],timezone:'America/Denver',locale:'en_US'};}
 function checked(kind='electron'){return validateConfig(config(kind),[{kind,exe:EXE}],ROOT);}
-const METADATA={timeZone:'America/New_York',locale:'en-US',language:'en-US',languages:['en-US','en'],januaryOffset:300,julyOffset:240};
+const METADATA={timeZone:'America/Denver',locale:'en-US',language:'en-US',languages:['en-US','en'],januaryOffset:420,julyOffset:360};
 class FakePipe {
   constructor(){this.handlers=[];this.calls=[];this.targets=[];this.sessions=new Map();this.frames=new Map();this.nextLoader=0;this.commitMode='fresh';this.failMethods=new Set();this.metadata=METADATA;this.closed=false;}
   on(fn){this.handlers.push(fn);return()=>this.handlers=this.handlers.filter(x=>x!==fn);}
@@ -58,7 +58,7 @@ async function attach(fixture,id,type='page',url,paused=true){fixture.pipe.emit(
 
 test('strict JSON rejects duplicate keys including nested keys',()=>{assert.throws(()=>parseJsonStrict('{"kind":"browser","kind":"electron"}'));assert.throws(()=>parseJsonStrict('{"x":{"a":1,"a":2}}'));assert.deepEqual(parseJsonStrict('{"x":[1,{"a":"\\\""}]}'),{x:[1,{a:'"'}]});});
 test('unknown schema properties and unauthorized paths are refused',()=>{assert.throws(()=>validateConfig({...config(),extra:true},[{kind:'electron',exe:EXE}],ROOT));assert.throws(()=>validateConfig(config(),[],ROOT));});
-test('only approved timezone and locale accepted',()=>{assert.throws(()=>validateConfig({...config(),timezone:'Asia/Shanghai'},[{kind:'electron',exe:EXE}],ROOT));assert.equal(checked().timezone,'America/New_York');});
+test('only approved timezone and locale accepted',()=>{assert.throws(()=>validateConfig({...config(),timezone:'Asia/Shanghai'},[{kind:'electron',exe:EXE}],ROOT));assert.equal(checked().timezone,'America/Denver');});
 test('TCP debugging and unsafe flags refused',()=>{for(const arg of ['--remote-debugging-port=9222','--inspect=9229','--remote-debugging-pipe','--no-sandbox','--load-extension=C:\\Fixture','--PROXY-SERVER=http://127.0.0.1:7897'])assert.throws(()=>validateConfig({...config(),args:[...BASE_ARGS,arg]},[{kind:'electron',exe:EXE}],ROOT));});
 test('bad proxy, duplicate flags and missing protection refused',()=>{assert.throws(()=>validateConfig({...config(),args:[...BASE_ARGS,'--disable-quic']},[{kind:'electron',exe:EXE}],ROOT));assert.throws(()=>validateConfig({...config(),args:BASE_ARGS.filter(x=>x!=='--disable-quic')},[{kind:'electron',exe:EXE}],ROOT));assert.throws(()=>validateConfig({...config(),args:BASE_ARGS.map(x=>x.startsWith('--proxy-server')?'--proxy-server=http://example.com:80':x)},[{kind:'electron',exe:EXE}],ROOT));});
 test('modern RTC and resolver exclusion accepted; old forms refused',()=>{assert.ok(checked());for(const arg of ['--force-webrtc-ip-handling-policy=disable_non_proxied_udp','--host-resolver-rules=MAP * ~NOTFOUND'])assert.throws(()=>validateConfig({...config(),args:[...BASE_ARGS.filter(x=>!x.startsWith(arg.split('=')[0]+'=')),arg]},[{kind:'electron',exe:EXE}],ROOT));});

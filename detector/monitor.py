@@ -9,6 +9,7 @@ import json
 import time
 
 import checks
+import wfp_audit
 
 GROUPS = ('network', 'desktop', 'browser')
 REASONS={
@@ -102,16 +103,21 @@ class LiveMonitor:
             self.nrpt=nrpt_matches(rows) if isinstance(rows,list) else None
         except Exception:
             self.nrpt=None
-        # Only the exact fixed helper's read-only list verb; never install/remove.
+        # Exact native identity/condition comparisons, never count-only markers.
         try:
-            import subprocess
-            exe=self.leases.physical(self.root/'wfp/ClaudeWfpGuard.exe',self.root)
-            out=subprocess.run([str(exe),'list'],capture_output=True,text=True,encoding='utf-8-sig',errors='replace',
-                               timeout=8,creationflags=0x08000000)
-            value=json.loads(out.stdout) if out.returncode==0 else None
-            self.wfp=value if isinstance(value,dict) and value.get('probe') is False else None
+            def current_package():
+                return self.backend.powershell("Get-AppxPackage -Name Claude | Sort-Object Version -Descending | Select-Object -First 1 -ExpandProperty PackageFullName | ConvertTo-Json -Compress",timeout=8)
+            self.wfp=wfp_audit.collect(self.root,current_package)
+            if wfp_audit.elevated():
+                import os,secrets
+                target=self.root/'detector/last-admin-wfp.json'
+                temp=target.with_name(target.name+'.'+secrets.token_hex(8)+'.tmp')
+                payload={'schema':1,'source_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+                         'panel_identity':self.leases.identity(os.getpid()),'elevated':True,'evidence':self.wfp}
+                temp.write_text(json.dumps(payload,ensure_ascii=False),'utf-8')
+                os.replace(temp,target)
         except Exception:
-            self.wfp=None
+            self.wfp={'state':'unknown','reason':'audit_read_unavailable','checked_at':time.time()}
         self.aux_at=time.time()
 
     def owned(self, role):
@@ -222,7 +228,8 @@ class LiveMonitor:
                 continue
             for i,record in enumerate(entries):
                 prefix=group+str(i)
-                suffix='' if len(entries)==1 else f' · 实例 {i+1}'
+                suffix=(' · Brave 隐私' if record.get('verification_mode')==self.leases.BRAVE_BROWSER_MODE else ' · Edge' if kind=='browser' else '')
+                if len(entries)>1:suffix+=f' · 实例 {i+1}'
                 ok=False
                 reason='environment_proof_unavailable'
                 observed=None
@@ -242,10 +249,10 @@ class LiveMonitor:
                     '当前环境监控正常' if ok else '已运行，等待有效监控',
                     f"绑定 PID {record['target']['pid']} 与创建时间；监控器必须在线，证据必须在四秒内。诊断：{reason}",
                     '原环境监控器的当前有效证明',measured=when)
-                for key,name,result in [('timezone','时区','America/New_York（美东）'),('language','语言','en-US（英语）')]:
+                for key,name,result in [('timezone','时区','America/Denver（丹佛）'),('language','语言','en-US（英语）')]:
                     add(prefix+'_'+key,group,name+suffix,'pass' if ok else 'unknown',result if ok else '等待当前环境验证',
-                        '桌面页面由原监控器持续核对。专用网页使用原生进程策略及美东系统时区；启动实测与实时策略监控是不同证据。原生外部组件和云端任务不在页面结论内。',
-                        '原环境监控证明 · '+('实时页面' if kind=='native' else '当前进程策略'),measured=when)
+                        '桌面页面由原监控器持续核对。专用网页使用原生进程策略及丹佛系统时区；启动实测与实时策略监控是不同证据。原生外部组件和云端任务不在页面结论内。',
+                        '原环境监控证明 · '+('实时页面' if kind=='native' else '系统时区／原生启动策略'),measured=when)
                 rtc_ok=False
                 try:
                     if ok and kind=='native':
@@ -254,20 +261,25 @@ class LiveMonitor:
                     elif ok:
                         src=self.leases.read_json(Path(record['source']),self.root)
                         rtc=src.get('startup_runtime',{}).get('rtc',{})
-                        rtc_ok=record.get('verification_mode')==self.leases.NATIVE_BROWSER_MODE
-                        if rtc_ok:
-                            # active_monitor already validates immutable startup proof,
-                            # identity, command line policy and fresh heartbeat.
+                        rtc_ok=record.get('verification_mode') in self.leases.NATIVE_BROWSER_MODES
+                        if rtc_ok and record.get('verification_mode')==self.leases.NATIVE_BROWSER_MODE:
                             rtc_ok=rtc.get('status') in ('complete','api_unavailable')
                 except Exception:rtc_ok=False
                 add(prefix+'_rtc',group,'WebRTC'+suffix,'pass' if rtc_ok else 'unknown',
                     '非代理 UDP 已禁用（当前策略）' if rtc_ok else '未取得当前 WebRTC 策略证明',
-                    '桌面：核对当前 Electron 全部 WebContents 的原生策略和监听器。网页：核对原生启动策略、启动时枚举与当前进程监控。策略有效不等于本次重新采集 ICE；私网候选与公网泄露是不同问题。',
-                    '当前原生策略；不重新运行 STUN',measured=when)
-                add(prefix+'_ipv6',group,'IPv6 / UDP'+suffix,'unknown',
-                    '桌面内核规则需只读权限核验' if kind=='native' and self.wfp is None else '沿用现有内核拦截' if kind=='native' else '专用 IPv4 TCP 代理 · QUIC 已禁用' if ok else '等待进程策略验证',
-                    '显示保护设计及可读的当前规则；没有权限读取 WFP 时不把安装文件标记当成实时内核证据。网页进程策略和桌面包内核阻断分别核验，不声称所有应用均受保护。',
-                    'WFP 只读枚举' if kind=='native' else '专用网页原生进程策略',measured=when)
+                    '桌面：核对当前 Electron 全部 WebContents 的原生策略和监听器。网页：核对原生启动策略、当前进程监控；人工模式不执行页面枚举。策略有效不等于本次重新采集 ICE；私网候选与公网泄露是不同问题。',
+                    '当前原生策略；不采集页面指纹或运行 STUN',measured=when)
+                if kind=='native':
+                    kernel_state,kernel_value,kernel_when=wfp_audit.native_row(self.wfp,record['target'],now)
+                    add(prefix+'_ipv6',group,'IPv6 / UDP 内核规则'+suffix,kernel_state,kernel_value,
+                        '实时读取已启用的 WFP 条件，逐项核对当前版本的程序 AppID／包 SID、IPv6 全阻断及非 TCP 阻断；旧安装报告、规则数量和旧版本均不能替代。本项是内核规则核验，不是本次 UDP／IPv6 实包实验。',
+                        '实时 WFP 身份与条件核对',measured=checks.stamp(kernel_when) if kernel_when is not None else None,ttl=wfp_audit.TTL)
+                else:
+                    browser_policy_ok=ok and record.get('verification_mode') in self.leases.NATIVE_BROWSER_MODES
+                    add(prefix+'_ipv6',group,'IPv6 / UDP 路由策略'+suffix,'pass' if browser_policy_ok else 'unknown',
+                        'IPv4 TCP 专用代理 · QUIC 已关闭（策略）' if browser_policy_ok else '等待当前浏览器进程策略核验',
+                        '原监控器核对当前浏览器的固定 IPv4 TCP 代理、解析器与 QUIC／WebRTC 启动策略。共享 Edge 可执行文件不具有按资料目录的 WFP 硬隔离；此项不声称完成当前 UDP／IPv6 实包泄露测试。',
+                        '当前浏览器原生进程策略',measured=when)
         diagnostic=status.get('transmission_diagnostic',{}) if gate_fresh else {}
         reason='当前存在离线锁定' if held else diagnostic.get('reason') or status.get('reason') if gate_fresh else 'no_current_guard_evidence'
         signature=(mode,tx if gate_fresh else None,reason)
@@ -286,11 +298,12 @@ class LiveMonitor:
         while not stop.is_set():
             began=time.monotonic()
             try:
-                if (time.time()-self.inventory_at>=12 or refresh.is_set()) and (inventory is None or not inventory.is_alive()):
+                force=refresh.is_set()
+                if (time.time()-self.inventory_at>=12 or force) and (inventory is None or not inventory.is_alive()):
                     inventory=threading.Thread(target=self.inventory,daemon=True)
                     inventory.start()
                     refresh.clear()
-                if time.time()-self.aux_at>=25 and (auxiliary is None or not auxiliary.is_alive()):
+                if (time.time()-self.aux_at>=25 or force) and (auxiliary is None or not auxiliary.is_alive()):
                     auxiliary=threading.Thread(target=self.auxiliary,daemon=True)
                     auxiliary.start()
                 callback(self.snapshot())

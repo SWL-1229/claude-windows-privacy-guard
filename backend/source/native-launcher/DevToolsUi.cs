@@ -720,7 +720,7 @@ internal static partial class DevToolsUi {
         SelectCustomLocation();
         SetField("latitude-input", "39.9526");
         SetField("longitude-input", "-75.1652");
-        SetField("timezone-input", "America/New_York");
+        SetField("timezone-input", "America/Denver");
         SetField("locale-input", "en-US");
         SelectConsole();
     }

@@ -53,9 +53,11 @@ python -X utf8 scripts/layout_inventory.py
 
 ## 5. 页面环境与 DevTools
 
+当前独立 Edge／Brave 日常入口先读 [手动浏览器工作流](manual-browsers.md)；下列 DevTools 说明主要用于桌面及保留的诊断模式，不要为日常网页重新附着调试器。
+
 DevTools 是 Electron/Chromium 自带工具；项目作者实现的是使用它的检测/启动流程。`Enable Main Process Debugger` 的 Node Inspector 与页面 DevTools 是不同接口，前者可能临时监听本机端口，维护结束应核对关闭，不能暴露到局域网。
 
-- **时区：** 页面 `Intl`/`Date` 覆盖不证明 Windows 原生 API、独立 Code/MCP 或云端 Cowork 相同。费城使用 `America/New_York`（Windows 对应 `Eastern Standard Time`），夏令时随规则变化。整机修改需要明确授权；不同时修改时钟时间或强制语言。
+- **时区：** 页面 `Intl`/`Date` 覆盖不证明 Windows 原生 API、独立 Code/MCP 或云端 Cowork 相同。当前源码快照使用丹佛 `America/Denver`（Windows 对应 `Mountain Standard Time`），冬季 UTC−7、夏季 UTC−6；这不是可任意填写其他地区的通用配置。整机修改需要明确授权；不同时修改时钟时间或强制语言。
 - **语言：** 浏览器首选语言、页面 `navigator.language`、界面语言、系统首选语言可能不同。只实施用户要求的范围，不能因为界面显示英语就报告所有组件一致。
 - **WebRTC：** 不以命令行开关或一个 mDNS 候选判定通过。实际检查 ICE 事件、SDP 和 stats 中的候选；当前主页面、刷新后和新 WebContents 分开测试。`disable_non_proxied_udp` 是路由策略，不等于关闭 WebRTC 或保证不枚举地址。涉及麦克风/摄像头停用时先确认功能取舍。
 - **DNS：** 网页检测结果需要与本机实际解析路径相符；代理远端解析不代表全部 OS DNS 都已覆盖。只设置用户要求的范围，核对 IPv4/IPv6、直连失败路径与 DNS 服务退出情况。

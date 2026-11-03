@@ -227,8 +227,8 @@ def _valid_identity(value):
 
 def _eastern(value):
     return (type(value) is dict and type(value.get('result')) is int
-        and value['result'] in (1, 2) and value.get('key') == 'Eastern Standard Time'
-        and type(value.get('bias')) is int and value['bias'] == 300
+        and value['result'] in (1, 2) and value.get('key') == 'Mountain Standard Time'
+        and type(value.get('bias')) is int and value['bias'] == 420
         and type(value.get('standard_bias')) is int and value['standard_bias'] == 0
         and type(value.get('daylight_bias')) is int and value['daylight_bias'] == -60
         and type(value.get('dynamic_dst_disabled')) is int and value['dynamic_dst_disabled'] == 0
@@ -272,7 +272,7 @@ def require_eastern_system_timezone(target, controller, *, identify, same_identi
             actual = identify(identity['pid'])
             if not _valid_identity(actual) or same_identity(identity, actual) is not True:
                 raise HostTimezoneError('browser_system_identity_unverified')
-        return {'source': 'win32_dynamic_timezone_v1', 'timezone': 'Eastern Standard Time',
+        return {'source': 'win32_dynamic_timezone_v1', 'timezone': 'Mountain Standard Time',
                 'session_verified': True}
     except HostTimezoneError:
         raise

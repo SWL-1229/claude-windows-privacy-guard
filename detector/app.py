@@ -12,6 +12,7 @@ from tkinter import ttk, filedialog, messagebox
 
 import checks
 import monitor
+import wfp_audit
 
 HERE = Path(__file__).resolve().parent
 COLORS = dict(bg='#F4F6F8', white='#FFFFFF', ink='#18283B', muted='#53657A', line='#DCE3EB',
@@ -28,7 +29,8 @@ class DetectorApp:
         self.stop_event=threading.Event()
         self.refresh_event=threading.Event()
         self.monitor_started=False
-        root.title('Claude 运行环境面板')
+        self.admin_review=wfp_audit.elevated()
+        root.title('Claude 运行环境面板'+('（管理员只读核验）' if self.admin_review else ''))
         root.configure(bg=COLORS['bg'])
         root.geometry('1180x900')
         root.minsize(980,760)
@@ -51,6 +53,8 @@ class DetectorApp:
                  bg=COLORS['bg'],fg=COLORS['ink']).pack(side='left')
         self.scan_btn=ttk.Button(header,text='刷新状态',style='Primary.TButton',command=self.scan)
         self.scan_btn.pack(side='right',ipadx=15,ipady=4)
+        self.admin_btn=ttk.Button(header,text='重新核验内核' if self.admin_review else '管理员核验',command=self.request_admin_review)
+        self.admin_btn.pack(side='right',padx=(0,8),ipady=4)
         tk.Label(outer,text='正在使用的安全环境，一眼看清。面板持续读取原有保护，不改变联网行为。',
                  bg=COLORS['bg'],fg=COLORS['muted'],font=('Microsoft YaHei UI',10),anchor='w').pack(fill='x',pady=(5,20))
         summary_frame=tk.Frame(outer,bg=COLORS['white'],highlightbackground=COLORS['line'],highlightthickness=1)
@@ -139,6 +143,28 @@ class DetectorApp:
             except Exception as error:
                 self.events.put(('error',checks.safe_code(error)))
         threading.Thread(target=worker,daemon=True).start()
+
+    def request_admin_review(self):
+        if self.admin_review:
+            self.scan()
+            return
+        # Explicit UI action only; no background elevation, service install or
+        # security-setting changes. Windows owns the UAC confirmation desktop.
+        try:
+            import ctypes,subprocess
+            executable=Path(sys.executable).with_name('pythonw.exe')
+            if not executable.is_file():raise OSError('pythonw_missing')
+            args=subprocess.list2cmdline(['-E','-s','-B',str(HERE/'app.py'),'--admin-review','--root',str(self.guard_root)])
+            shell=ctypes.WinDLL('shell32',use_last_error=True)
+            shell.ShellExecuteW.argtypes=[ctypes.c_void_p,ctypes.c_wchar_p,ctypes.c_wchar_p,ctypes.c_wchar_p,ctypes.c_wchar_p,ctypes.c_int]
+            shell.ShellExecuteW.restype=ctypes.c_void_p
+            result=shell.ShellExecuteW(None,'runas',str(executable),args,str(HERE),1)
+            if not result or result<=32:
+                self.activity.set('管理员授权未完成；继续保留普通只读面板。')
+                return
+            self.close()  # Only this observer window; never the guard or Claude.
+        except Exception:
+            self.activity.set('无法打开管理员核验；原保护和当前面板仍保留。')
 
     def poll(self):
         try:
@@ -237,10 +263,13 @@ class DetectorApp:
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--root',type=Path,default=checks.ROOT,help='本机已部署并验收的保护根目录；默认 ~/.claude-network-guard')
-    parser.add_argument('--scan',action='store_true',help='读取一次现有保护状态，输出隐藏 IP 的 JSON，不新增公网探测')
+    parser.add_argument('--root',type=Path,default=checks.ROOT,help='本机实际已部署的保护目录')
+    parser.add_argument('--scan',action='store_true',help='只读检测并输出隐藏 IP 的 JSON，不打开界面')
+    parser.add_argument('--admin-review',action='store_true',help='管理员只读核验模式；仍不修改保护规则')
     args=parser.parse_args()
     guard_root=args.root.expanduser().absolute()
+    if args.admin_review and not wfp_audit.elevated():
+        raise SystemExit('administrator_review_permission_not_granted')
     if args.scan:
         live=monitor.LiveMonitor(guard_root)
         live.inventory()

@@ -411,9 +411,9 @@ def validate_native_status(value):
                 or value['counts']['startup_checks']!=1):raise leases.LeaseError('publisher_native_startup_invalid')
         env=startup['environment']
         if (not _exact(env,('timeZone','locale','language','languages','januaryOffset','julyOffset'))
-                or env['timeZone']!='America/New_York' or env['locale'] not in ('en-US','en_US') or env['language']!='en-US'
+                or env['timeZone']!='America/Denver' or env['locale'] not in ('en-US','en_US') or env['language']!='en-US'
                 or type(env['languages']) is not list or env['languages']!=['en-US','en']
-                or type(env['januaryOffset']) is not int or env['januaryOffset']!=300 or type(env['julyOffset']) is not int or env['julyOffset']!=240
+                or type(env['januaryOffset']) is not int or env['januaryOffset']!=420 or type(env['julyOffset']) is not int or env['julyOffset']!=360
                 or not _rtc(startup['rtc'])):raise leases.LeaseError('publisher_native_startup_invalid')
         rtc=startup['rtc'];no_raw=all(rtc[source][k]==0 for source in ('events','sdp','stats') for k in RAW_KEYS)
         unavailable=rtc['status']=='api_unavailable' and not rtc['gatheringComplete'] and not rtc['statsAvailable'] and all(n==0 for source in ('events','sdp','stats') for n in rtc[source].values())

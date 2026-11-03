@@ -141,11 +141,11 @@ class NativePolicyObserver:
             records=[item[0] for item in self.registry.records.values()]
             value['registration_count']=len(records)
             opted=[record for record in records if record.get('verification_mode') is not None]
-            native_only=bool(records) and len(opted)==len(records) and all(r.get('kind')=='browser' and r.get('verification_mode')=='native_process_policy_v1' for r in records)
-            known_scope=all(r.get('kind') in ('browser','native') and (r.get('verification_mode') is None or r.get('kind')=='browser' and r.get('verification_mode')=='native_process_policy_v1') for r in records)
+            native_only=bool(records) and len(opted)==len(records) and all(r.get('kind')=='browser' and r.get('verification_mode') in ('native_process_policy_v1','manual_native_browser_v2','brave_manual_browser_v1') for r in records)
+            known_scope=all(r.get('kind') in ('browser','native') and (r.get('verification_mode') is None or r.get('kind')=='browser' and r.get('verification_mode') in ('native_process_policy_v1','manual_native_browser_v2','brave_manual_browser_v1')) for r in records)
             snapshot_environment_scope=bool(records) and all(
                 (r.get('kind')=='native' and r.get('verification_mode') is None)
-                or (r.get('kind')=='browser' and r.get('verification_mode')=='native_process_policy_v1')
+                or (r.get('kind')=='browser' and r.get('verification_mode') in ('native_process_policy_v1','manual_native_browser_v2','brave_manual_browser_v1'))
                 for r in records)
             desktop_only=bool(records) and all(r.get('kind')=='native' and r.get('verification_mode') is None for r in records)
             value['scope_kind']=('browser-only' if native_only else 'native-only' if desktop_only

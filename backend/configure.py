@@ -56,7 +56,7 @@ def topology(config,server):
     proxies=config.get('proxies')
     if type(proxies) is not list or len(proxies)!=2 or any(type(p) is not dict for p in proxies):raise ValueError('two_concrete_proxies_required')
     entry,final=proxies
-    if entry.get('name')!='PINNED-ENTRY' or entry.get('type') not in ('vless','vmess','ss','trojan','hysteria2','tuic','socks5','http') or entry.get('dialer-proxy'):
+    if entry.get('name')!='PINNED-ENTRY' or entry.get('type') not in ('vless','vmess','ss','trojan','hysteria2','tuic','socks5','http','anytls') or entry.get('dialer-proxy'):
         raise ValueError('concrete_entry_required')
     if (final.get('name')!='PINNED-RESIDENTIAL' or final.get('type')!='socks5'
         or final.get('server')!=server or final.get('dialer-proxy')!='PINNED-ENTRY'

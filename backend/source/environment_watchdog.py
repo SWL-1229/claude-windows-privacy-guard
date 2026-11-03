@@ -79,6 +79,12 @@ def native_browser_policy_observation(root,target,controller,status_path,*,recor
             or leases.parents().get(target['pid'])!=controller['pid']):
         raise leases.LeaseError('native_browser_identity_invalid')
     before=leases.read_json(expected,root)
+    if before.get('verification_mode')==leases.BRAVE_BROWSER_MODE:
+        from brave_browser_policy import observation
+        return observation(root,target,controller,status_path,record=record,bootstrap=bootstrap)
+    if before.get('verification_mode')==leases.MANUAL_BROWSER_MODE:
+        from manual_browser_policy import observation
+        return observation(root,target,controller,status_path,record=record,bootstrap=bootstrap)
     if record is None:
         startup=before.get('startup_runtime',{})
         first=_utc_timestamp(before.get('startup_runtime_checked_at'))
@@ -124,8 +130,8 @@ def good_metadata(value, nonce, now=None):
     now = time.time() if now is None else now
     return (isinstance(value, dict) and value.get('nonce') == nonce
             and value.get('origin') == 'https://claude.ai' and value.get('topFrame') is True
-            and value.get('timeZone') == 'America/New_York' and value.get('language') == 'en-US'
-            and value.get('januaryOffset') == 300 and value.get('julyOffset') == 240
+            and value.get('timeZone') == 'America/Denver' and value.get('language') == 'en-US'
+            and value.get('januaryOffset') == 420 and value.get('julyOffset') == 360
             and type(value.get('epoch')) in (int, float)
             and 0 <= now - value['epoch'] / 1000 <= leases.TTL)
 
@@ -602,14 +608,18 @@ def validate_config(value, root):
     if not isinstance(value, dict) or value.get('schema') != 1:
         raise leases.LeaseError('monitor_config_invalid')
     kind, target, nonce = value.get('kind'), leases.validate_identity(value.get('target')), value.get('nonce')
-    if value.get('verification_mode') is not None and (kind!='browser' or value['verification_mode']!=leases.NATIVE_BROWSER_MODE):
+    if value.get('verification_mode') is not None and (kind!='browser' or value['verification_mode'] not in leases.NATIVE_BROWSER_MODES):
         raise leases.LeaseError('native_browser_mode_invalid')
     leases.paths(kind, target, nonce, root)
     runtime = leases.read_json(Path(root) / 'environment-runtime.json', root)
     if kind == 'browser':
         controller = leases.validate_identity(value.get('controller'))
-        if (os.path.normcase(target['image']) != os.path.normcase(runtime['browser_executable'])
-                or os.path.normcase(controller['image']) != os.path.normcase(runtime['node_executable'])
+        expected_browser=runtime['browser_executable']
+        if value.get('verification_mode')==leases.BRAVE_BROWSER_MODE:
+            from brave_browser_policy import browser_executable
+            expected_browser=browser_executable(root)
+        if (os.path.normcase(target['image']) != os.path.normcase(expected_browser)
+                or os.path.normcase(controller['image']) != os.path.normcase(str(Path(runtime['python_executable']).with_name('pythonw.exe')) if value.get('verification_mode') in (leases.MANUAL_BROWSER_MODE,leases.BRAVE_BROWSER_MODE) else runtime['node_executable'])
                 or not leases.alive(controller)
                 or leases.parents().get(target['pid']) != controller['pid']):
             raise leases.LeaseError('browser_controller_identity_invalid')
@@ -627,7 +637,7 @@ def validate_config(value, root):
 def run_monitor(config_path, root=ROOT):
     value = validate_config(leases.read_json(config_path, root), root)
     kind, target, nonce = value['kind'], value['target'], value['nonce']
-    native_browser=kind=='browser' and value.get('verification_mode')==leases.NATIVE_BROWSER_MODE
+    native_browser=kind=='browser' and value.get('verification_mode') in leases.NATIVE_BROWSER_MODES
     monitor = leases.identity(os.getpid())
     navigation_state = {}
     suspension_state = {}
@@ -656,7 +666,7 @@ def run_monitor(config_path, root=ROOT):
     record_path, lease_path = leases.register(kind, target, monitor, nonce,
                                              source=source, root=root,
                                              initial_checked_at=observation['checked_at'],
-        **({'verification_mode':leases.NATIVE_BROWSER_MODE,'controller':value['controller'],
+        **({'verification_mode':value['verification_mode'],'controller':value['controller'],
             'bootstrap_checked_at':observation['bootstrap_checked_at'],
             'startup_runtime_sha256':observation['startup_runtime_sha256'],
             'native_arguments_sha256':observation['native_arguments_sha256']} if native_browser else {}))
@@ -882,7 +892,7 @@ def start_monitor(kind, target, *, nonce=None, controller=None, status_path=None
     if kind == 'browser':
         value.update(controller=controller, status_path=str(status_path))
     if verification_mode is not None:
-        if kind!='browser' or verification_mode!=leases.NATIVE_BROWSER_MODE:
+        if kind!='browser' or verification_mode not in leases.NATIVE_BROWSER_MODES:
             raise leases.LeaseError('native_browser_mode_invalid')
         value['verification_mode']=verification_mode
     leases.atomic_json(config_path, value)

@@ -180,7 +180,7 @@ export function validateConfig(input,authorizedExecutables,root=ROOT){
   if(!exact(input,['schema_version','kind','exe','args','domains','timezone','locale',...(Object.hasOwn(input??{},'verification_mode')?['verification_mode']:[])]))reject('invalid_configuration_schema');
   if(Object.hasOwn(input,'verification_mode')&&(!nativeMode||input.kind!=='browser'))reject('unsupported_verification_mode');
   if(input.schema_version!==1||!['electron','browser'].includes(input.kind))reject('unsupported_configuration');
-  if(input.timezone!=='America/New_York'||input.locale!=='en_US')reject('unauthorized_locale');
+  if(input.timezone!=='America/Denver'||input.locale!=='en_US')reject('unauthorized_locale');
   if(typeof input.exe!=='string'||!path.win32.isAbsolute(input.exe)||input.exe.includes('\0'))reject('invalid_executable');
   if(!Array.isArray(authorizedExecutables)||!authorizedExecutables.some(item=>item.kind===input.kind&&norm(item.exe)===norm(input.exe)))reject('unauthorized_executable');
   if(!Array.isArray(input.domains)||!input.domains.length||new Set(input.domains).size!==input.domains.length)reject('invalid_domain_list');
@@ -226,7 +226,7 @@ export function validateProtocolCall(method,params={},sessionId){
   if(method==='Target.attachToTarget'){if(sessionId!==undefined||!exact(params,['targetId','flatten'])||typeof params.targetId!=='string'||params.targetId.length>256||params.flatten!==true)reject('unauthorized_protocol_parameters');return;}
   if(method==='Target.detachFromTarget'){if(sessionId!==undefined||!exact(params,['sessionId'])||typeof params.sessionId!=='string'||!params.sessionId||params.sessionId.length>256)reject('unauthorized_protocol_parameters');return;}
   if(!session)reject('target_session_required');
-  if(method==='Emulation.setTimezoneOverride'){if(!exact(params,['timezoneId'])||!['America/New_York',''].includes(params.timezoneId))reject('unauthorized_protocol_parameters');return;}
+  if(method==='Emulation.setTimezoneOverride'){if(!exact(params,['timezoneId'])||!['America/Denver',''].includes(params.timezoneId))reject('unauthorized_protocol_parameters');return;}
   if(method==='Emulation.setLocaleOverride'){if(!exact(params,['locale'])||!['en_US',''].includes(params.locale))reject('unauthorized_protocol_parameters');return;}
   if(method==='Network.setExtraHTTPHeaders'){if(!exact(params,['headers'])||!plain(params.headers)||!(exact(params.headers,[])||(exact(params.headers,['Accept-Language'])&&params.headers['Accept-Language']==='en-US,en;q=0.9')))reject('unauthorized_protocol_parameters');return;}
   if(method==='Page.navigate'){if(!exact(params,['url'])||params.url!=='https://claude.ai/')reject('unauthorized_protocol_parameters');return;}
@@ -1394,10 +1394,10 @@ export class EnvironmentController {
   }
   diagnostic(data){
     if(!plain(data)||['timeZone','locale','language','languages','januaryOffset','julyOffset'].some(key=>!Object.hasOwn(data,key))||!Array.isArray(data.languages))return 'metadata_unavailable';
-    if(data.timeZone!=='America/New_York')return 'timezone_mismatch';
+    if(data.timeZone!=='America/Denver')return 'timezone_mismatch';
     if(!['en-US','en_US'].includes(data.locale))return 'locale_mismatch';
     if(data.language!=='en-US'||data.languages[0]!=='en-US')return 'language_mismatch';
-    if(data.januaryOffset!==300||data.julyOffset!==240)return 'daylight_offset_mismatch';
+    if(data.januaryOffset!==420||data.julyOffset!==360)return 'daylight_offset_mismatch';
     return null;
   }
   matches(data){return this.diagnostic(data)===null;}
@@ -1654,10 +1654,10 @@ function nativeMetadataDiagnostic(value){
       !Array.isArray(value.languages)||value.languages.length<1||value.languages.length>8||
       value.languages.some(x=>typeof x!=='string'||x.length>32)||
       !Number.isInteger(value.januaryOffset)||!Number.isInteger(value.julyOffset))return 'invalid_result';
-  if(value.timeZone!=='America/New_York')return 'timezone_mismatch';
+  if(value.timeZone!=='America/Denver')return 'timezone_mismatch';
   if(!['en-US','en_US'].includes(value.locale))return 'locale_mismatch';
   if(value.language!=='en-US'||value.languages.length!==2||value.languages[0]!=='en-US'||value.languages[1]!=='en')return 'language_mismatch';
-  if(value.januaryOffset!==300||value.julyOffset!==240)return 'daylight_offset_mismatch';
+  if(value.januaryOffset!==420||value.julyOffset!==360)return 'daylight_offset_mismatch';
   return null;
 }
 

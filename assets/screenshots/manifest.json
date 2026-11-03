@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "images": [
+    {
+      "file": "network-before.png",
+      "sha256": "2230a440d3cc644bb7f1eaa37b1686c83a2a4b85b612162d8e1b24cc0e34b9ed",
+      "original_unedited": true,
+      "source": "User-supplied screenshot, authorized for repository publication"
+    },
+    {
+      "file": "network-after.png",
+      "sha256": "e3714e824136a29ccb9fdb504233e18399bef490f9aacc0a221202446b48f227",
+      "original_unedited": true,
+      "source": "User-supplied screenshot, authorized for repository publication"
+    },
+    {
+      "file": "language-before.png",
+      "sha256": "f4cbcb0ddf877227aa72da449ce117b48d7ef5e8a1865b0ad8db6be9aab84502",
+      "original_unedited": true,
+      "source": "User-supplied screenshot, authorized for repository publication"
+    },
+    {
+      "file": "language-after.png",
+      "sha256": "91b5a156f1783727ddabcbdf2bafcca05a44d817b75de4f5a42238cec1c5a0e7",
+      "original_unedited": true,
+      "source": "User-supplied screenshot, authorized for repository publication"
+    },
+    {
+      "file": "overview-before.png",
+      "sha256": "5704a90c80c6cae06b30abf5d5e92844de1d46e5b05eb65266fccab4ec9bdf94",
+      "original_unedited": true,
+      "source": "User-supplied screenshot, authorized for repository publication"
+    },
+    {
+      "file": "panel-blocked.png",
+      "sha256": "f20aae456972a991650209868cb0c120d211bd22cf306c9e9824a9f6c7bff5bb",
+      "original_unedited": true,
+      "source": "User-supplied screenshot, authorized for repository publication"
+    },
+    {
+      "file": "panel-monitoring.png",
+      "sha256": "aa60d0d3aaf6b1ef6603bf1c942ab37a4fc0dfa87d583486dd7bddd15eefe491",
+      "original_unedited": true,
+      "source": "User-supplied screenshot, authorized for repository publication"
+    },
+    {
+      "file": "brave-current.png",
+      "sha256": "6ac707e0a367568029faaff56e1ff37682e847f812dfe7bf42e0fd0fdbe881ed",
+      "original_unedited": true,
+      "source": "User-supplied screenshot, authorized for repository publication"
+    }
+  ]
+}

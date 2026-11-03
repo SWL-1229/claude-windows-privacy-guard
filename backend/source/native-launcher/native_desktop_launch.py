@@ -71,7 +71,7 @@ MESSAGES = {
     'helper_foreground_denied': 'Windows 未授予本次窗口操作权限，已停止配置并保持保护。',
     'helper_continue_cancelled': '没有完成窗口继续操作，已停止本次配置并保持网络限制。',
     'console_paste_required': 'Claude 开发工具需要你亲手解除防误粘贴提示，本次没有自动绕过它。',
-    'wrong_timezone': 'Claude 没有读到美东时区，已停止放行。',
+    'wrong_timezone': 'Claude 没有读到丹佛时区，已停止放行。',
     'wrong_language': 'Claude 没有读到英语环境，已停止放行。',
     'wrong_dst_offsets': 'Claude 的冬夏令时偏移不正确，已停止放行。',
     'wrong_origin': '尚未确认真实 Claude 页面，已停止放行。',
@@ -284,12 +284,12 @@ def metadata(data, *, real_origin, now=None):
     nonce = ci_get(data, 'nonce')
     epoch = ci_get(data, 'epoch')
     top_frame = ci_get(data, 'topFrame')
-    if zone != 'America/New_York':
+    if zone != 'America/Denver':
         raise LaunchError('wrong_timezone')
     if language != 'en-US':
         raise LaunchError('wrong_language')
     if (type(january) not in (int, float) or type(july) not in (int, float)
-            or january != 300 or july != 240):
+            or january != 420 or july != 360):
         raise LaunchError('wrong_dst_offsets')
     if not isinstance(nonce, str) or not re.fullmatch(r'[A-Za-z0-9_-]{16,96}', nonce):
         raise LaunchError('stale_metadata')
@@ -1177,7 +1177,7 @@ class WindowsBackend:
                 # launcher's process-wide environment is mutated.
                 launch_env = kwargs.get('env')
                 launch_env = dict(os.environ if launch_env is None else launch_env)
-                launch_env.update(TZ='America/New_York', LANG='en_US.UTF-8',
+                launch_env.update(TZ='America/Denver', LANG='en_US.UTF-8',
                                   LC_ALL='en_US.UTF-8')
                 kwargs['env'] = launch_env
             process = original_popen(command, *args, **kwargs)
@@ -1795,7 +1795,7 @@ STAGE_TEXT = {
     'reconfigure-existing': '正在调整当前会话的时区和语言…',
     'offline-start': '正在离线准备 Claude…',
     'disable-js': '正在准备安全的页面加载…',
-    'offline-configure': '正在配置美东时区和英语…',
+    'offline-configure': '正在配置丹佛时区和英语…',
     'offline-native-rtc': '正在配置原生 WebRTC 隐私保护…',
     'held-exit-probe': '正在复核住宅出口…',
     'release-for-html-only': '正在准备受保护的联网加载…',

@@ -23,6 +23,9 @@ import time
 ROOT = Path(__file__).resolve().parent
 TTL = 4.0
 NATIVE_BROWSER_MODE = 'native_process_policy_v1'
+MANUAL_BROWSER_MODE = 'manual_native_browser_v2'
+BRAVE_BROWSER_MODE = 'brave_manual_browser_v1'
+NATIVE_BROWSER_MODES = (NATIVE_BROWSER_MODE, MANUAL_BROWSER_MODE, BRAVE_BROWSER_MODE)
 NATIVE_BROWSER_SCOPE = 'native-browser-process-policy-v1'
 NATIVE_BROWSER_REASON = 'native_browser_policy_verified'
 RTC_COUNT_FIELDS = frozenset(('total','privateIPv4','linkLocalIPv4','loopbackIPv4','publicIPv4',
@@ -43,7 +46,13 @@ def native_browser_source(value, record, now):
     This never claims a new JS/runtime observation. Only the native watchdog
     may publish a fresh policy lease after its independent actual OS/argv read.
     """
-    if (record.get('kind')!='browser' or record.get('verification_mode')!=NATIVE_BROWSER_MODE
+    if record.get('verification_mode')==BRAVE_BROWSER_MODE:
+        from brave_browser_policy import source
+        return source(value,record,now,type('LeaseAPI',(),{'LeaseError':LeaseError,'_suspension_timestamp':staticmethod(_suspension_timestamp),'native_startup_fingerprint':staticmethod(native_startup_fingerprint),'TTL':TTL}))
+    if record.get('verification_mode')==MANUAL_BROWSER_MODE:
+        from manual_browser_policy import source
+        return source(value,record,now,type('LeaseAPI',(),{'LeaseError':LeaseError,'_suspension_timestamp':staticmethod(_suspension_timestamp),'native_startup_fingerprint':staticmethod(native_startup_fingerprint),'TTL':TTL}))
+    if (record.get('kind')!='browser' or record.get('verification_mode') not in NATIVE_BROWSER_MODES
             or type(value) is not dict or type(value.get('schema_version')) is not int
             or value['schema_version']!=1 or value.get('kind')!='browser'
             or value.get('verification_mode')!=NATIVE_BROWSER_MODE
@@ -63,10 +72,10 @@ def native_browser_source(value, record, now):
         raise LeaseError('native_browser_startup_invalid')
     env=startup.get('environment')
     if (type(env) is not dict or set(env)!= {'timeZone','locale','language','languages','januaryOffset','julyOffset'}
-            or env.get('timeZone')!='America/New_York' or env.get('locale') not in ('en-US','en_US')
+            or env.get('timeZone')!='America/Denver' or env.get('locale') not in ('en-US','en_US')
             or env.get('language')!='en-US' or env.get('languages')!=['en-US','en']
-            or type(env.get('januaryOffset')) is not int or env['januaryOffset']!=300
-            or type(env.get('julyOffset')) is not int or env['julyOffset']!=240):
+            or type(env.get('januaryOffset')) is not int or env['januaryOffset']!=420
+            or type(env.get('julyOffset')) is not int or env['julyOffset']!=360):
         raise LeaseError('native_browser_startup_invalid')
     rtc=startup.get('rtc')
     if (type(rtc) is not dict or set(rtc)!= {'status','gatheringComplete','statsAvailable','events','sdp','stats'}
@@ -629,7 +638,7 @@ def register(kind, target, monitor, nonce, source=None, root=ROOT, initial_check
     record = {'schema': 1, 'kind': kind, 'target': target, 'monitor': monitor, 'nonce': nonce,
               'lease_name': lease_path.name, 'source': source, 'registered_at': time.time()}
     if verification_mode is not None:
-        if (verification_mode!=NATIVE_BROWSER_MODE or kind!='browser' or initial_checked_at is None
+        if (verification_mode not in NATIVE_BROWSER_MODES or kind!='browser' or initial_checked_at is None
                 or type(bootstrap_checked_at) not in (int,float) or not math.isfinite(bootstrap_checked_at)
                 or not 0<=time.time()-bootstrap_checked_at<=TTL
                 or any(type(v) is not str or re.fullmatch('[0-9a-f]{64}',v) is None
@@ -667,7 +676,7 @@ def write_lease(record_path, lease_path, nonce, ok, checked_at, reason='verified
     if record.get('nonce') != nonce or not same_identity(record['monitor'], identity(os.getpid())):
         raise LeaseError('lease_superseded')
     if record.get('verification_mode') is not None:
-        if (record.get('verification_mode')!=NATIVE_BROWSER_MODE or record.get('kind')!='browser'
+        if (record.get('verification_mode') not in NATIVE_BROWSER_MODES or record.get('kind')!='browser'
                 or (ok is True and reason!=NATIVE_BROWSER_REASON) or suspension_guard is not None
                 or reason in ('browser_scope_transition_pending','browser_scope_suspension_pending')):
             raise LeaseError('native_browser_lease_invalid')
@@ -1011,7 +1020,7 @@ class LeaseRegistry:
             runtime_checks, all_actual_runtime = [], True
             suspension_checks, suspension_runtimes, suspension_writes = [], [], []
             for record, path, present in active:
-                if record.get('verification_mode') != NATIVE_BROWSER_MODE or record.get('kind') != 'browser':
+                if record.get('verification_mode') not in NATIVE_BROWSER_MODES or record.get('kind') != 'browser':
                     native_process_policy_only = False
                 if (type(record.get('schema')) is not int or record['schema'] != 1
                         or record.get('kind') not in ('browser', 'native')
@@ -1029,7 +1038,7 @@ class LeaseRegistry:
                          and record.get('verification_mode') is None
                          and lease.get('reason') == 'verified')
                         or (record.get('kind') == 'browser'
-                            and record.get('verification_mode') == NATIVE_BROWSER_MODE)):
+                            and record.get('verification_mode') in NATIVE_BROWSER_MODES)):
                     verified_environment_only = False
                 now = self.clock()
                 if (type(lease.get('schema')) is not int or lease['schema'] != 1
@@ -1128,7 +1137,7 @@ class LeaseRegistry:
             return deny(code if code in known else 'registry_observation_failed')
 
     def _native_browser_policy_record(self,record,lease):
-        if (record.get('verification_mode')!=NATIVE_BROWSER_MODE or record.get('kind')!='browser'
+        if (record.get('verification_mode') not in NATIVE_BROWSER_MODES or record.get('kind')!='browser'
                 or lease.get('ok') is not True or lease.get('reason')!=NATIVE_BROWSER_REASON
                 or 'suspension_guard' in lease
                 or not self._transition_source(record)
@@ -1160,8 +1169,12 @@ class LeaseRegistry:
             return False
         runtime = read_json(self.root / 'environment-runtime.json', self.root)
         controller = self.get_identity(pid)
-        if (controller is None or os.path.normcase(controller['image']) != os.path.normcase(runtime['node_executable'])
-                or os.path.normcase(record['target']['image']) != os.path.normcase(runtime['browser_executable'])
+        expected_browser=runtime['browser_executable']
+        if record.get('verification_mode')==BRAVE_BROWSER_MODE:
+            from brave_browser_policy import browser_executable
+            expected_browser=browser_executable(self.root)
+        if (controller is None or os.path.normcase(controller['image']) != os.path.normcase(str(Path(runtime['python_executable']).with_name('pythonw.exe')) if record.get('verification_mode') in (MANUAL_BROWSER_MODE,BRAVE_BROWSER_MODE) else runtime['node_executable'])
+                or os.path.normcase(record['target']['image']) != os.path.normcase(expected_browser)
                 or int(controller['creation'], 16) > int(record['target']['creation'], 16)
                 or self.get_parents().get(record['target']['pid']) != pid):
             return False

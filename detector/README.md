@@ -94,3 +94,17 @@ python -B -X utf8 detector/app.py --scan
 ```
 
 源码：`app.py` 为 Tkinter 界面，`monitor.py` 为只读实时观察器，`checks.py` 为证据/报告辅助及早期独立检测实现；面板只调用实时观察器，不调用早期主动探测路径。`install_shortcut.py` 仅创建快捷方式。本目录不附本机运行报告、截图、浏览器资料或 `.lnk` 文件。
+
+## 新版只读 WFP 条件核验
+
+普通权限显示“待验证”可能是权限不足，不等于发现泄露。面板新增【管理员核验】，由 Windows 显示 UAC；确认后只读核对当前安装版本的内核条件，不安装或删除规则。退出管理员面板也不停止原保护。
+
+首次需要维护者使用**本机当前已部署版本的真实 EXE 清单**准备读取器：
+
+```powershell
+python -B -X utf8 detector/prepare_wfp_audit.py --root 'D:/ClaudeGuard' --inventory 'D:/PRIVATE/current-inventory.json'
+```
+
+示例路径须替换。输入 JSON 包含 `schema: 1`、当前 `package`、`family`、`executable_count`，以及逐项 `executables`（`path`、`sha256`）。不得用示例或旧版本清单替代本次发现。工具在自己的 maintenance 目录编译绑定版本的只读 C# 读取器、运行不打开 WFP 引擎的自测，并创建本机 `detector/wfp-audit.json`。拒绝覆盖已有绑定；应用更新后先审查旧绑定再重新准备。源码模板见 [DetailedWfpReadOnly.cs.in](native/DetailedWfpReadOnly.cs.in)。不分发作者的 EXE、绝对路径、旧清单或核验结果。
+
+面板验证读取器和清单摘要、当前包身份、具体规则条件与结果时效；缺权限、缺文件、版本变化或过期均不能算通过。**内核条件核验仍不等于已进行实包 UDP／IPv6 正负对照。** 手动网页行支持 Edge／Brave，按各自的进程策略报告；当前网页不靠面板启动 CDP 或注入页面脚本。

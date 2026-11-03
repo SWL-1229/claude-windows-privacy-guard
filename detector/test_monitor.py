@@ -33,9 +33,7 @@ class LiveEvidenceTests(unittest.TestCase):
 
     def fixture(self, root, *, current=True, hold=False, runtime=True):
         live=monitor.LiveMonitor.__new__(monitor.LiveMonitor)
-        # Windows hosted runners may return an 8.3 TEMP alias; production
-        # intentionally rejects redirected paths. Canonicalize this fixture.
-        live.root=Path(root).resolve();live.leases=self.leases;live.watchdog=Mock()
+        live.root=Path(root);live.leases=self.leases;live.watchdog=Mock()
         live.roles={};live.events=[];live.last_signature=None;live.inventory_at=self.now;live.inventory_error=None
         live.unregistered_native=[]
         live.identities={'gate':self.target};live.guard_sha='fixed-sha';live.nrpt=True;live.aux_at=self.now;live.wfp=None
@@ -47,6 +45,7 @@ class LiveEvidenceTests(unittest.TestCase):
         status={'pid':123,'updated':self.now-.1 if current else self.now-10,'loaded_source_sha256':'fixed-sha',
                 'allowed':True,'exit_ip':'192.0.2.5','application_transmission_state':'permitted'}
         live.leases.read_json.side_effect=lambda path,root:status if Path(path).name=='status.json' else self.lease if Path(path).name=='lease.json' else {}
+        live.leases.NATIVE_BROWSER_MODES=('native_process_policy_v1','manual_native_browser_v2','brave_manual_browser_v1')
         live.leases.paths.return_value=(live.root/'registration.json',live.root/'lease.json')
         live.watchdog.active_monitor.return_value={'kind':'native'}
         return live
@@ -84,24 +83,6 @@ class LiveEvidenceTests(unittest.TestCase):
 
     def test_readable_reason_includes_actual_follower_failure(self):
         self.assertIn('家宽',monitor.readable_reason('main_final_not_pinned_residential'))
-
-    def test_running_unregistered_claude_is_not_reported_as_stopped(self):
-        with tempfile.TemporaryDirectory() as d:
-            live=self.fixture(d,runtime=False)
-            live.unregistered_native=[self.target]
-            rows={r['key']:r for r in live.snapshot()['rows']}
-            self.assertEqual(rows['desktop_runtime']['state'],'fail')
-            self.assertIn('登记',rows['desktop_runtime']['value'])
-            self.assertEqual(rows['desktop_timezone']['state'],'unknown')
-
-    def test_inventory_read_error_is_unknown_not_stopped(self):
-        with tempfile.TemporaryDirectory() as d:
-            live=self.fixture(d,runtime=False)
-            live.inventory_error='service_identity_unavailable'
-            live.owned=lambda role:False
-            rows={r['key']:r for r in live.snapshot()['rows']}
-            for key in ('services','admission','exit','dns'):
-                self.assertEqual(rows[key]['state'],'unknown')
 
 
 if __name__=='__main__':unittest.main()

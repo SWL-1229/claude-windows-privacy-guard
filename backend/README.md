@@ -1,8 +1,8 @@
 # 桌面辅助工具与网页版隔离环境源码
 
-这是作者电脑上维护过的实现的**可构建源码快照**，用于审查、复用和继续开发。包括实际桌面启动器、DevTools 辅助程序、隔离 Edge 控制器、进程绑定监控、专用出口网关、Clash 入口跟随器、DNS 和 WFP 工具源码。不是截图、伪代码或只有说明文档。
+这是作者电脑上维护过的实现的**可构建源码快照**，用于审查、复用和继续开发。包括实际桌面启动器、DevTools 辅助程序、独立 Edge／Brave 手动入口及兼容调试控制器、进程绑定监控、专用出口网关、Clash 入口跟随器、DNS 和 WFP 工具源码。不是截图、伪代码或只有说明文档。
 
-公开副本已移除个人出口、凭据和路径；未复制浏览器配置、登录资料、截图、历史报告、运行状态、旧候选二进制、Claude/Edge/Mihomo 程序。**构建成功不等于在另一台电脑已安装并验收。** 本版未提供完整跨机器一键部署器；仍需按下文完成部署审查。原电脑上的运行环境未被替换。
+公开副本已移除个人出口、凭据和路径；未复制浏览器配置、登录资料、历史机器报告、运行状态、旧候选二进制、Claude/Edge/Mihomo 程序。**构建成功不等于在另一台电脑已安装并验收。** 本版未提供完整跨机器一键部署器；仍需按下文完成部署审查。原电脑上的运行环境未被替换。
 
 完成本机部署后，可以使用仓库的 [Claude 运行环境面板](../detector/README.md) 查看现有网关、入口跟随器、DNS 与应用监控。它是只读观察器，不承担部署或放行职责。
 
@@ -11,8 +11,9 @@
 | 目录或文件 | 用途 |
 | --- | --- |
 | `source/native-launcher/` | 桌面安全入口、临时官方 Inspector 引导、WebRTC 策略与 DevTools 元数据检测 |
-| `source/privacy-qa/` | 隔离浏览器私有调试管道控制器、状态发布与相关离线测试；目录名为历史布局，保留用于兼容源码中的路径 |
-| `source/claude_browser_launch.py` | 用单独配置目录启动 Claude 网页环境，不复制普通 Edge 登录 |
+| `source/privacy-qa/` | 状态发布、启动核验和保留的旧调试控制器；当前手动网页入口不附着此调试控制器 |
+| `source/claude_browser_launch.py`、`manual_browser_*.py` | 当前手动 Edge 入口；独立 profile 与真实偏好，不复制普通登录 |
+| `source/claude_brave_launch.py`、`brave_browser_*.py` | 独立 Brave 原生隐私入口、进程策略与浏览器文件绑定 |
 | `source/guard.py` | 不解密 TLS 的本地 CONNECT 网关、实际出口探测、许可撤销和失败关闭 |
 | `source/environment_lease.py`、`environment_watchdog.py` | 以 PID、创建时间、nonce 和实际状态绑定检测，拒绝旧状态续期 |
 | `source/ingress_follow.py` | 从本地 Clash Verge 的真实手动选择中取得入口，保留住宅 SOCKS5 出口；不导入作者订阅 |
@@ -29,7 +30,7 @@
 - 自行安装官方 Claude MSIX、Microsoft Edge、Clash Verge Rev 和 Mihomo 核心；不捆绑这些第三方产品，遵守各自许可。源码中的入口跟随器依赖 Clash Verge 配置与命名管道布局，其他代理客户端尚未适配。
 - `configure.py` 和入口跟随器使用 PyYAML：`python -m pip install -r backend/requirements.txt`。其他主要 Python 部件使用标准库。
 - 本快照采用固定本地拓扑：普通网关 `17893`、受保护网关 `17894`、专用核心 `17895`、核心控制 `17896`、DNS loopback `53`，临时主进程 Inspector `9229`。它们是程序协议约定，不是作者住宅信息。发生端口占用应停止，不能只改一处端口继续使用。
-- **此快照的网页版继承 Windows 美东时区**并校验，使用英语启动参数；不是在任意系统时区上都能单独覆盖。桌面方案同样需要按实际组件区分原生时区与页面时区。准备工具不会改变整机时区或语言。Windows 时区不符时保持拒绝，另行决定是否授权更改。
+- **此快照的手动网页版继承 Windows 丹佛时区（Mountain Standard Time / America/Denver）**并校验，使用英语启动参数；不是在任意系统时区上都能单独覆盖。桌面方案同样需要按实际组件区分原生时区与页面时区。准备工具不会改变整机时区或语言。Windows 时区不符时保持拒绝，另行决定是否授权更改。冬季 UTC−7、夏季 UTC−6，不能永久写死一个 UTC 偏移。
 - DevTools/菜单行为随 Claude 更新变化，可能要求用户点【继续配置】并保持相关窗口可见。没有移除窗口输入保护、自粘贴保护或 UAC。不能承诺关闭 DevTools、最小化、锁屏、睡眠唤醒后均可无人值守。
 
 ## 第一步：构建，不动当前安装
@@ -58,7 +59,7 @@ python -B -X utf8 backend/build.py --output $sourceBuild
 
 `allowed_exit_ips` 是服务看到的实际公网出口；`residential_server` 是 SOCKS5 服务端地址，两者可能因供应商 NAT 而不同。名单必须非空；不会自动把当前普通网络 IP 加进去。模板故意不能直接联网。
 
-入口代理必须是一个真实、具体的可用节点，名称保留 `PINNED-ENTRY`。住宅节点为 `PINNED-RESIDENTIAL`、SOCKS5、UDP 关闭、经前者拨号；不加 DIRECT、自动选择组或订阅回退。跟随器之后从用户本机手动选择的主 Clash 线路同步入口，前提是主线路的住宅节点与专用配置凭据一致。它不创建主 Clash 节点，也不会把订阅上传。
+入口代理必须是一个真实、具体的可用节点，名称保留 `PINNED-ENTRY`。住宅节点为 `PINNED-RESIDENTIAL`、SOCKS5、UDP 关闭、经前者拨号；不加 DIRECT、自动选择组或订阅回退。跟随器之后从用户本机手动选择的主 Clash 线路同步入口（支持 AnyTLS 等已列出的协议），前提是主线路的住宅节点与专用配置凭据一致。它不创建主 Clash 节点，也不会把订阅上传。
 
 用上一步 `$sourceBuild` 与实际私人文件路径执行：
 
@@ -70,6 +71,26 @@ python -B -X utf8 backend/configure.py --output $sourceBuild --settings 'C:/YOUR
 
 输出 `configured: true` 仍然不是部署成功。它不创建 `installed.json`，也不移除离线锁。不要仅为了启动而手写“verified”登记文件。
 
+### 可选：准备 Brave 绑定
+
+先从 [Brave 官方](https://brave.com/download/) 安装用户级 Windows Brave，再运行：
+
+```powershell
+python -B -X utf8 backend/configure_brave.py --output $sourceBuild
+```
+
+工具核对 `%LOCALAPPDATA%/BraveSoftware/Brave-Browser/Application/brave.exe` 的有效 Brave 签名和文件摘要，在仍带部署锁的新构建目录生成本机 `brave-runtime.json`；不启动浏览器、不安装或放行保护。当前只适配此用户级路径。浏览器更新后需要重新核验绑定，不能关闭校验来继续使用。该文件不提交 GitHub。
+
+### 手动链式组
+
+部署者可以在实际保护根目录创建私人 `ingress-follow-policy.json`：
+
+```json
+{"schema":1,"mode":"manual-group","group":"你自己在 Clash 中建立的手动链式分组名"}
+```
+
+该组必须是实际存在的 `select` 组，用户在 Clash 中手动连好入口 → SOCKS5 家宽出口。跟随器只读核对所选链路、最终凭据与实际出口，不替用户自动连接或选择节点。组名不匹配、仅选家宽未连接或入口发生外部变化时保持拒绝。缺少此文件沿用旧路由检查，不能把另一台机器的组名直接复制过来。
+
 ## 第三步：部署审查与现场验收
 
 这一步需要有 Windows 网络保护经验的维护者或按 Skill 操作的代理。复用源码可以省去从零开发，但不能跳过本机身份、权限和真实流量验证。详见 [复现流程](../references/replication.md) 和 [验收清单](../references/acceptance.md)。
@@ -79,7 +100,7 @@ python -B -X utf8 backend/configure.py --output $sourceBuild --settings 'C:/YOUR
 3. 用 WFP helper 的只读 `plan` 检查精确 EXE 和包 SID，然后在用户明确授权及管理员确认下部署。规则仅允许对应身份访问专用 IPv4 TCP 网关。每个身份 4 条 block 是当前实现，不是固定版本的总条数。不要使用测试探针的规则代替应用规则。
 4. 验证实际规则条件与签名清单、正负流量探针，之后才由部署程序写入真实 `installed.json`。本仓库故意未复制早期会处理进程的一次性 `install.ps1` 或旧版本维护事务。**当前源码包缺少通用、受审查的完整安装事务**，不要把本步骤描述成已经自动提供。
 5. 配置并验证作用域 DNS、网关和入口跟随器，确认当前链路实际出口在用户名单。部署锁的移除只能在完成本轮安装条件后由明确的部署步骤处理；不是遇到“foreign hold”就删文件。用户原有维护锁不得删除。
-6. 先以无账号方式检查欢迎页。桌面入口为 `native-launcher/native_desktop_launch.py --gui`，网页入口为 `claude_browser_launch.py`；根据目标机器创建快捷方式。它们可能启动自身服务，但都不代替系统规则安装。独立 Edge 仍共享浏览器 EXE，不宣称有按配置文件的 WFP 硬隔离。
+6. 先以无账号方式检查欢迎页。桌面入口为 `native-launcher/native_desktop_launch.py --gui`，Edge 网页入口为 `claude_browser_launch.py`，Brave 入口为 `claude_brave_launch.py`；根据目标机器创建快捷方式。它们可能启动自身服务，但都不代替系统规则安装。独立 Edge 仍共享浏览器 EXE，不宣称有按配置文件的 WFP 硬隔离。
 7. 冷启动、刷新、新标签、入口切换、控制器停止、锁定与恢复逐项验收；WebRTC 检查候选，UDP/IPv6 用目标身份及正对照验证。用户自行登录前不发起实际账号任务；未测的 Cowork、外部 MCP、云端出口单列。
 
 管理员授权只能用户确认。源代码接口开放不代表调用者可以绕过 Windows 权限或第三方应用限制。完整部署之前，所有构建/离线测试结果都应标为“构建验证”，不能称已获得可用安全环境。
@@ -94,4 +115,4 @@ python -B -X utf8 backend/configure.py --output $sourceBuild --settings 'C:/YOUR
 
 ## 隐私与范围
 
-不要上传构建目录、生成配置、Cookie、OAuth 缓存、控制器密码、浏览器 profiles、logs、状态文件或截图。公开仓库只保留白名单源码、示例和离线测试。DevTools 辅助界面是调试依赖而不是隐身技术；本地清理和美国出口不能重置硬件身份、删除服务器记录或保证账号不受限。
+不要上传构建目录、生成配置、Cookie、OAuth 缓存、控制器密码、浏览器 profiles、logs 或状态文件。仓库包含白名单源码、示例、离线测试，以及单独授权的 [截图图集](../docs/before-after.md)。DevTools 辅助界面是调试依赖而不是隐身技术；本地清理和美国出口不能重置硬件身份、删除服务器记录或保证账号不受限。

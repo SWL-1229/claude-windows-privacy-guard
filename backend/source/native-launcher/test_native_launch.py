@@ -17,8 +17,8 @@ TARGET = {'pid': 500, 'creation': '1123456789abcdef', 'image': str(Path('/privat
 
 
 def good(origin='https://claude.ai'):
-    return dict(nonce='a' * 32, origin=origin, timeZone='America/New_York', language='en-US',
-                januaryOffset=300, julyOffset=240, epoch=1000000, topFrame=True)
+    return dict(nonce='a' * 32, origin=origin, timeZone='America/Denver', language='en-US',
+                januaryOffset=420, julyOffset=360, epoch=1000000, topFrame=True)
 
 
 class MemoryFile:
@@ -128,7 +128,7 @@ class MetadataTests(unittest.TestCase):
 
     def test_uppercase_helper_fields_are_accepted(self):
         checked = m.metadata({k.upper(): v for k, v in good().items()}, real_origin=True, now=1000)
-        self.assertEqual(checked['timeZone'], 'America/New_York')
+        self.assertEqual(checked['timeZone'], 'America/Denver')
 
     def test_wrong_zone_language_dst_origin_and_epoch(self):
         for key, value, code in [
@@ -785,7 +785,7 @@ class NavigationWaitTests(unittest.TestCase):
                 raise m.LaunchError('helper_failed')
             return dict(good(), epoch=self.clock[0] * 1000)
         result = self.backend(responder).wait_real_metadata(dict(TARGET))
-        self.assertEqual(result['timeZone'], 'America/New_York')
+        self.assertEqual(result['timeZone'], 'America/Denver')
         self.assertEqual(verifies[0], 2)
 
     def test_error_page_wait_is_bounded_and_never_pastes_metadata(self):

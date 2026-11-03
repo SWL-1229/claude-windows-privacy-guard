@@ -8,7 +8,7 @@
   const policy='disable_non_proxied_udp';
   if (!config || config.pid!==process.pid || !/^[0-9a-f]{16}$/.test(config.creation) ||
       !/^[0-9a-f]{32}$/.test(config.nonce) || !/^[0-9a-f]{64}$/.test(config.sourceSha256) ||
-      config.output!=='C:\\Users\\lenovo\\.claude-network-guard\\native-launcher\\native-rtc-runtime.json') {
+      config.output!==__CLAUDE_GUARD_RTC_OUTPUT__) {
     throw Error('rtc_configuration_invalid');
   }
   const prior=globalThis[key];

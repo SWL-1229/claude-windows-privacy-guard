@@ -2,6 +2,10 @@
 
 Windows 上的 Claude 本地隐私与联网保护项目：提供 Codex Skill、可构建的桌面/隔离浏览器后端，以及现有保护的实时可视化面板。
 
+**Skill 1.3.0 · 独立 Brave 隐私入口、手动 Edge 入口、WebRTC 配置修复与丹佛时区。**
+
+**[查看前后对比与最新实测](docs/before-after.md)**：使用最新 DNS 已加载完成的原图，分组对比网络泄露、语言设置和面板状态。
+
 **新增：[Claude 运行环境面板](detector/README.md)**。每秒自动展示现有保护的出口、放行/阻断原因、DNS 定向、WebRTC 策略、时区和语言。关闭面板不影响保护，不新增公网探测或 DevTools 操作。
 
 [桌面工具与网页版隔离环境源码](backend/README.md) 提供可构建的实际后端、配置工具和离线测试；尚未提供跨机器完整一键部署器。实时面板连接你自己的已有部署，不代替安装与验收。
@@ -15,6 +19,18 @@ A Windows toolkit and Codex skill for scoped Claude sign-in cleanup, fail-closed
 目标是减少本地状态残留、意外切换 IP 等环境因素可能带来的风控风险。具体包括定向处理桌面应用与浏览器的登录和站点记录，并指导部署固定出口保护：只有允许的 IP 且校验有效时才放行，检测到 IP 不符或校验失效时阻断受保护流量。
 
 **完整图文使用流程： [Claude 本地清理与固定 IP 配置教程](https://agi-master.cloud/claude-network.html#guard-route)**。教程按确认使用情况、下载 Skill、盘点与清理、填写固定出口、部署保护、实测验收和安全启动的顺序展开，可以逐步照着操作。
+
+## 前后对比
+
+<table>
+<tr><th width="50%">修改前：DNS／UDP 出口不一致</th><th width="50%">最新结果：出口、DNS、时区一致</th></tr>
+<tr>
+<td valign="top"><a href="assets/screenshots/network-before.png"><img src="assets/screenshots/network-before.png" width="100%" alt="修改前的网络泄露检测"></a></td>
+<td valign="top"><a href="assets/screenshots/network-after.png"><img src="assets/screenshots/network-after.png" width="100%" alt="最新完整检测：DNS 已加载，WebRTC 无泄露，丹佛时区一致"></a></td>
+</tr>
+</table>
+
+**[完整图集：网络、语言、保护面板与 Brave](docs/before-after.md)**。截图是这台电脑当次的第三方检测结果；不是 Anthropic 官方评分。所有图片为用户授权的原图，过渡状态与待验证项均注明范围。
 
 ## 作者
 
@@ -101,7 +117,11 @@ python -B -X utf8 detector/install_shortcut.py
 
 ## 本版兼容改进
 
-- Skill 1.2.0 增加实时面板工作流与状态排查，区分可视化面板、执行保护的监控器及实际泄露验收。GitHub 版与本机安装版使用同一份操作说明。
+- **Skill 1.3.0** 增加 [Edge／Brave 手动入口工作流](references/manual-browsers.md)，区分桌面监控与普通手动浏览器；GitHub 版和本机安装版同步。
+- 独立 Brave 入口复用现有出口保护，使用 Brave 自带隐私功能；日常网页入口不附着 CDP／WebDriver、不注入反检测脚本。Edge 入口保留。
+- WebRTC 修复写入并实时核对独立 profile 的实际偏好；只靠启动参数或 Claude 域名策略可能漏掉其他网页。保留登录资料和其他偏好。
+- 当前快照统一 `America/Denver` 与冬夏令时偏移；支持只读跟随手动链式组与 AnyTLS 入口，不替用户自动连接。
+- 面板增加管理员只读 WFP 条件核验，证据缺失仍显示待验证；不把配置策略当作实包测试。
 - 识别新版 `%LOCALAPPDATA%\Claude-Data\claude_pzs8sxrjxfjjc`，与旧 MSIX 目录一起盘点；该布局已在 4.4212 系列实际核对。未知/自定义目录标记待检查，不自动扩大删除范围。
 - 定向移除已确认的 `config.json` OAuth 缓存、最近账户字段、本地设备登记与用量历史。只删 Cookie 可能仍保留登录状态。
 - 新增 `--all-discovered`，明确选择同时清理本次发现的新旧桌面目录；执行前预检全部所选根，清理后复查正常配置和登录字段。
@@ -197,7 +217,7 @@ python -X utf8 scripts/desktop_cleanup.py
 
 DevTools 是 Claude 所用 Electron/Chromium 的内置开发者工具，不是本项目制作的。项目作者编写的是调用与验证它的启动、监控流程。相关接口见 [Electron 官方文档](https://www.electronjs.org/docs/latest/api/web-contents#contentsopendevtoolsoptions)。
 
-是否需要附着、是否可最小化取决于实际部署的控制器。本机曾验证的方案依赖附着窗口，不能把这个结果当成所有设备的通用行为。主进程 Node Inspector 是另一种临时诊断接口，使用后应关闭，不能开放给局域网。公开 Skill 不会为其他人自动安装这套控制器；可审查并构建 [backend 源码](backend/README.md)，再按自己的机器部署验收。
+**新版手动 Edge／Brave 网页入口不使用 DevTools；桌面入口仍有独立依赖。** 是否需要附着、是否可最小化取决于实际部署的控制器。本机曾验证的方案依赖附着窗口，不能把这个结果当成所有设备的通用行为。主进程 Node Inspector 是另一种临时诊断接口，使用后应关闭，不能开放给局域网。公开 Skill 不会为其他人自动安装这套控制器；可审查并构建 [backend 源码](backend/README.md)，再按自己的机器部署验收。
 
 日常使用从已验收的安全入口打开，不必每次清理登录；更新 Claude 后重新核对包和规则。运行中临时测不到出口不等于 IP 已变，按有效期执行暂停、复验与恢复；不要直接关闭保护，也不要宣称逐包零延迟。
 
@@ -217,7 +237,7 @@ python -B -X utf8 detector/install_shortcut.py --help
 
 ## 隐私与贡献
 
-本仓库不包含真实出口地址、代理密码、账户、登录 Cookie、运行配置、私人机器报告或用户截图。提交问题时只提供脱敏后的错误类型、系统/应用版本和检查结论；不要上传 Cookie、令牌、完整进程命令行或代理订阅。
+本仓库仅公开这组用户明确授权的前后对比截图，其中保留检测时的出口地址和设备信息。源码、默认配置不内置作者出口；不包含代理密码、账户、登录 Cookie、私人运行配置或原始机器报告。提交问题时只提供脱敏后的错误类型、系统/应用版本和检查结论；不要上传 Cookie、令牌、完整进程命令行或代理订阅。
 
 欢迎通过 Issue 描述复现步骤，通过 Pull Request 改进版本兼容与测试。新清理逻辑应同时证明目标记录被删除、无关数据被保留；未知存储格式应保留并报告。
 

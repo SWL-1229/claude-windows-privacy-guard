@@ -14,7 +14,7 @@ SPEC.loader.exec_module(m)
 
 TARGET = Path('C:/isolated-test/package/app/Claude.exe').absolute()
 IDENTITY = dict(pid=513, creation='0123456789abcdef', image=str(TARGET))
-EXPECTED = dict(TZ='America/New_York', LANG='en_US.UTF-8', LC_ALL='en_US.UTF-8')
+EXPECTED = dict(TZ='America/Denver', LANG='en_US.UTF-8', LC_ALL='en_US.UTF-8')
 
 
 class ScopedLaunchEnvironmentTests(unittest.TestCase):
