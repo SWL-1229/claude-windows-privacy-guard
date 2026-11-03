@@ -35,11 +35,11 @@
 <tr><th width="50%">保护锁定／缺少有效登记</th><th width="50%">环境监控正常</th></tr>
 <tr>
 <td valign="top"><a href="../assets/screenshots/panel-blocked.png"><img src="../assets/screenshots/panel-blocked.png" width="100%" alt="保护面板的历史锁定示例：未取得有效出口，桌面缺少有效安全登记"></a></td>
-<td valign="top"><a href="../assets/screenshots/panel-monitoring.png"><img src="../assets/screenshots/panel-monitoring.png" width="100%" alt="保护面板的历史监控示例：当前环境正常，UDP 与 IPv6 仍待管理员核验"></a></td>
+<td valign="top"><a href="../assets/screenshots/panel-monitoring.png"><img src="../assets/screenshots/panel-monitoring.png" width="100%" alt="新版实际面板：丹佛时区、英语，20 项有效，IPv6／UDP 的 36 条 WFP 内核规则核验通过"></a></td>
 </tr>
 </table>
 
-这组是**历史界面状态示例**，其中的美东时区不是当前丹佛设置。右图保留了两个“待验证”：普通权限无法读取桌面 WFP 内核条件时，面板应显示待核验，不能因为其他项通过就变绿。新版增加管理员只读核验；需要本机当前版本对应的读取器和真实授权，不修改规则。
+左图是**历史锁定状态示例**；右图已换成最新提供的实际面板，显示 `America/Denver`（丹佛）、`en-US`（英语），**20 项有效、0 项异常、0 项待验证**。其中 IPv6／UDP 内核规则一行显示 36 条规则的实时 WFP 身份与条件核对通过。该图记录当次监控和内核条件核验，不表示另外进行了 STUN 或实包 UDP／IPv6 正负对照；权限不足或证据过期时仍应显示待验证。
 
 ## 当前 Brave：原生隐私功能与手动使用
 
